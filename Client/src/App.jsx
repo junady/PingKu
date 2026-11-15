@@ -10,7 +10,7 @@ import {
   MessageSquare,
   Bell,
 } from 'lucide-react';
-import pingkuLogo from './assets/pingku-logo-transparent.png';
+import pingkuLogo from './assets/pingku-logo.png';
 import { useTelemetry } from './hooks/useTelemetry';
 import TopMetricCards from './components/TopMetricCards';
 import ServiceHostStatus from './components/ServiceHostStatus';
@@ -83,11 +83,11 @@ export default function App() {
       <aside className="np-sidebar">
         <div>
           {/* Logo Brand Header */}
-          <div className="np-brand !px-1 !pb-4 !pt-1 border-b border-slate-800/80 mb-2 flex items-center">
+          <div className="px-2 pt-2 pb-4 mb-2 border-b border-slate-800/80 flex items-center justify-start min-h-[56px]">
             <img
               src={pingkuLogo}
               alt="PingKu — Server & framework monitoring"
-              className="h-10 w-auto max-w-[200px] object-contain select-none drop-shadow-[0_2px_12px_rgba(20,184,166,0.3)]"
+              className="w-full max-w-[195px] h-auto max-h-12 object-contain select-none block drop-shadow-[0_2px_12px_rgba(20,184,166,0.25)]"
             />
           </div>
 
