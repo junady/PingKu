@@ -75,19 +75,19 @@ export default function App() {
   const currentMenu = menuItems.find((item) => item.id === activeTab) || menuItems[0];
 
   return (
-    <div className="h-screen w-screen flex bg-[#090d16] text-slate-100 font-sans overflow-hidden">
+    <div className="np-app">
       {/* ==========================================
           SIDEBAR KIRI (PingKu NOC)
       ========================================== */}
-      <aside className="w-64 bg-[#0e1320] border-r border-slate-800/90 flex flex-col justify-between shrink-0 select-none shadow-xl z-20">
+      <aside className="np-sidebar">
         <div>
           {/* Logo Brand Header */}
-          <div className="h-20 px-6 flex items-center gap-3 border-b border-slate-800/80 bg-[#0e1320]/60">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500/20 to-teal-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.2)]">
-              <Activity className="w-5 h-5" />
+          <div className="np-brand">
+            <div className="np-brand-icon">
+              <Activity className="w-4 h-4" />
             </div>
             <div>
-              <span className="text-lg font-bold tracking-tight text-white flex items-center gap-1.5">
+              <span className="text-base font-bold tracking-tight text-white block leading-tight">
                 PingKu
               </span>
               <span className="text-[10px] font-medium text-slate-400 block -mt-0.5">
@@ -97,7 +97,7 @@ export default function App() {
           </div>
 
           {/* Navigasi Utama */}
-          <nav className="p-4 space-y-1.5">
+          <nav className="np-nav">
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -105,20 +105,9 @@ export default function App() {
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold transition-all duration-200 relative group ${
-                    isActive
-                      ? 'bg-gradient-to-r from-slate-800/90 to-slate-800/60 text-white border border-slate-700/80 shadow-md shadow-black/20'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
-                  }`}
+                  className={`np-nav-item ${isActive ? 'is-active' : ''}`}
                 >
-                  {isActive && (
-                    <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
-                  )}
-                  <Icon
-                    className={`w-4 h-4 shrink-0 transition-colors ${
-                      isActive ? 'text-emerald-400' : 'text-slate-400 group-hover:text-slate-300'
-                    }`}
-                  />
+                  <Icon className="w-4 h-4 shrink-0" />
                   <span>{item.label}</span>
                 </button>
               );
@@ -127,26 +116,12 @@ export default function App() {
         </div>
 
         {/* Status Koneksi Host di Bagian Bawah Sidebar */}
-        <div className="p-4 border-t border-slate-800/80">
-          <div
-            className={`px-4 py-3 rounded-xl border flex items-center justify-between text-xs font-semibold shadow-inner ${
-              isConnected
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-                : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
-            }`}
-          >
-            <div className="flex items-center gap-2 truncate">
-              <span className="truncate">
-                {isConnected ? 'Debian 12: Connected' : 'Server: Offline (8080)'}
-              </span>
-            </div>
-            <span
-              className={`w-2.5 h-2.5 rounded-full shrink-0 shadow-sm ${
-                isConnected
-                  ? 'bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]'
-                  : 'bg-rose-500'
-              }`}
-            />
+        <div className="np-sidebar-footer">
+          <div className={`np-connection-pill ${!isConnected ? 'np-connection-pill--offline' : ''}`}>
+            <span className="truncate">
+              {isConnected ? 'Debian 12: Connected' : 'Server: Offline (8080)'}
+            </span>
+            <span className={`np-dot ${isConnected ? 'np-dot--up' : 'np-dot--down'}`} />
           </div>
         </div>
       </aside>
@@ -154,13 +129,13 @@ export default function App() {
       {/* ==========================================
           AREA KANAN: HEADER + KONTEN UTAMA
       ========================================== */}
-      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+      <div className="np-main">
         {/* Header Atas */}
-        <header className="h-20 px-8 bg-[#0e1320]/80 backdrop-blur-md border-b border-slate-800/90 flex items-center justify-between shrink-0 z-10">
+        <header className="np-topbar">
           <div>
             {activeTab === 'tools' ? (
               <div>
-                <h1 className="text-xl font-extrabold text-white tracking-tight">
+                <h1 className="np-topbar-title text-white">
                   Network Tools
                 </h1>
                 <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-0.5">
@@ -171,7 +146,7 @@ export default function App() {
               </div>
             ) : (
               <div>
-                <h1 className="text-xl font-extrabold text-white tracking-tight">
+                <h1 className="np-topbar-title text-white">
                   {currentMenu.title}
                 </h1>
                 <p className="text-xs text-slate-400 mt-0.5">{currentMenu.subtitle}</p>
@@ -180,36 +155,36 @@ export default function App() {
           </div>
 
           {/* Action Header Kanan */}
-          <div className="flex items-center gap-4">
+          <div className="np-topbar-actions">
             {/* Search Input */}
-            <div className="relative hidden md:block">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <div className="np-search-box hidden md:block">
+              <Search className="w-4 h-4 np-search-icon" />
               <input
                 type="text"
                 placeholder="Search metrics, hosts..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-56 pl-9 pr-3.5 py-2 bg-slate-950/70 border border-slate-700/80 rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 shadow-inner"
+                className="np-input text-xs"
               />
             </div>
 
-            {/* Live Telemetry Indicator Badge (Demo Toggle Dihapus) */}
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold shadow-inner">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+            {/* Live Telemetry Indicator Badge */}
+            <div className="np-pill np-pill--up text-xs font-semibold">
+              <span className="np-dot np-dot--up" />
               <span>Live Telemetry</span>
             </div>
 
             {/* User & Notifications */}
-            <div className="flex items-center gap-2 text-slate-400 pl-2 border-l border-slate-800">
-              <button className="p-2 rounded-xl hover:bg-slate-800/80 hover:text-slate-200 transition">
+            <div className="flex items-center gap-1.5 text-slate-400 pl-2 border-l border-slate-800">
+              <button className="np-icon-btn" title="Pesan">
                 <MessageSquare className="w-4 h-4" />
               </button>
-              <button className="p-2 rounded-xl hover:bg-slate-800/80 hover:text-slate-200 transition relative">
+              <button className="np-icon-btn" title="Notifikasi">
                 <Bell className="w-4 h-4" />
-                <span className="w-2 h-2 rounded-full bg-rose-500 absolute top-1.5 right-1.5 shadow-[0_0_6px_rgba(244,63,94,0.8)]" />
+                <span className="np-badge-dot" />
               </button>
               {/* User Avatar */}
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 border border-slate-700 flex items-center justify-center font-bold text-xs text-white shadow-md shadow-indigo-500/20 ml-1 select-none">
+              <div className="np-avatar ml-1">
                 JR
               </div>
             </div>
@@ -218,7 +193,7 @@ export default function App() {
 
         {/* Konten Tab Aktif */}
         <main
-          className={`flex-1 overflow-y-auto ${
+          className={`np-content ${
             activeTab === 'topology' ? 'p-6 flex flex-col' : 'p-8'
           }`}
         >

@@ -65,43 +65,43 @@ export default function TopMetricCards({ system, history = [] }) {
   const txKbps = Math.round(system?.net_tx_kbps ?? 48);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+    <div className="np-kpi-grid">
       {/* ==========================================
           1. CPU USAGE (Beszel-Style Depth & Gradient)
       ========================================== */}
-      <div className="relative group bg-gradient-to-b from-[#131927] to-[#0e1320] border border-slate-800/90 hover:border-slate-700/80 rounded-2xl p-5 flex flex-col justify-between shadow-lg shadow-black/20 transition-all duration-300">
-        <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-sky-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-        
+      <div className="np-card np-kpi-card">
         <div>
-          <div className="flex items-center justify-between">
+          <div className="np-kpi-head">
             <div className="flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/20">
                 <Cpu className="w-3.5 h-3.5" />
               </div>
-              <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+              <span className="font-semibold text-slate-300 uppercase tracking-wider text-xs">
                 CPU Usage
               </span>
             </div>
-            <span className="text-[11px] font-mono font-medium text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700/60">
+            <span className="text-[11px] font-mono text-slate-400 bg-slate-900/80 px-2 py-0.5 rounded border border-slate-800">
               Disk: {system?.disk_percent ?? 32}%
             </span>
           </div>
 
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-extrabold text-white tracking-tight">
+            <span className="np-kpi-value text-white">
               {Math.round(system?.cpu_percent ?? 14)}%
             </span>
-            <span className="text-xs text-slate-400">load</span>
+            <span className="np-kpi-unit">load</span>
           </div>
 
           {/* Sparkline Area Chart */}
-          <CpuAreaSparkline history={history} />
+          <div className="np-sparkline">
+            <CpuAreaSparkline history={history} />
+          </div>
         </div>
 
         <div className="flex items-center justify-between text-xs text-slate-400 mt-4 pt-3 border-t border-slate-800/80">
           <span>Intel Xeon • 4 Cores</span>
-          <span className="text-emerald-400 font-medium flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-emerald-400 font-medium flex items-center gap-1.5">
+            <span className="np-dot np-dot--up" />
             Normal
           </span>
         </div>
@@ -110,42 +110,42 @@ export default function TopMetricCards({ system, history = [] }) {
       {/* ==========================================
           2. RAM USAGE (Beszel-Style Depth & Bar)
       ========================================== */}
-      <div className="relative group bg-gradient-to-b from-[#131927] to-[#0e1320] border border-slate-800/90 hover:border-slate-700/80 rounded-2xl p-5 flex flex-col justify-between shadow-lg shadow-black/20 transition-all duration-300">
-        <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-indigo-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-
+      <div className="np-card np-kpi-card">
         <div>
-          <div className="flex items-center justify-between">
+          <div className="np-kpi-head">
             <div className="flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
                 <HardDrive className="w-3.5 h-3.5" />
               </div>
-              <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+              <span className="font-semibold text-slate-300 uppercase tracking-wider text-xs">
                 RAM Usage
               </span>
             </div>
-            <span className="text-[11px] font-mono font-medium text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700/60">
+            <span className="text-[11px] font-mono text-slate-400 bg-slate-900/80 px-2 py-0.5 rounded border border-slate-800">
               {ramPercent}%
             </span>
           </div>
 
           <div className="mt-3 flex items-baseline gap-1.5 flex-wrap">
-            <span className="text-3xl font-extrabold text-white tracking-tight">
+            <span className="np-kpi-value text-white">
               {ramUsedMb} MB
             </span>
-            <span className="text-sm font-medium text-slate-400">
+            <span className="np-kpi-unit">
               / {ramTotalGb} GB
             </span>
           </div>
 
-          {/* Progress Bar with Gradient and Glow */}
-          <div className="w-full h-2.5 bg-slate-800/80 rounded-full overflow-hidden mt-6 p-0.5 border border-slate-700/40">
+          {/* Progress Bar with Enhanced Depth Fill */}
+          <div className="np-progress-track">
             <div
-              className={`h-full rounded-full transition-all duration-500 ${
-                ramPercent > 85
-                  ? 'bg-gradient-to-r from-rose-500 to-amber-500 shadow-[0_0_8px_rgba(244,63,94,0.4)]'
-                  : 'bg-gradient-to-r from-sky-400 to-indigo-500 shadow-[0_0_8px_rgba(56,189,248,0.3)]'
-              }`}
-              style={{ width: `${ramPercent}%` }}
+              className="np-progress-fill"
+              style={{
+                width: `${ramPercent}%`,
+                background:
+                  ramPercent > 85
+                    ? 'linear-gradient(90deg, #ef4444 0%, #f97316 100%)'
+                    : 'linear-gradient(90deg, #38bdf8 0%, #3b82f6 100%)',
+              }}
             />
           </div>
         </div>
@@ -159,32 +159,30 @@ export default function TopMetricCards({ system, history = [] }) {
       {/* ==========================================
           3. NETWORK I/O (Beszel-Style Traffic Card)
       ========================================== */}
-      <div className="relative group bg-gradient-to-b from-[#131927] to-[#0e1320] border border-slate-800/90 hover:border-slate-700/80 rounded-2xl p-5 flex flex-col justify-between shadow-lg shadow-black/20 transition-all duration-300">
-        <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-
+      <div className="np-card np-kpi-card">
         <div>
-          <div className="flex items-center justify-between">
+          <div className="np-kpi-head">
             <div className="flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                 <ArrowLeftRight className="w-3.5 h-3.5" />
               </div>
-              <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+              <span className="font-semibold text-slate-300 uppercase tracking-wider text-xs">
                 Network I/O
               </span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              <span className="np-dot np-dot--up" />
               <span className="text-[11px] font-mono text-emerald-400 font-medium">Live</span>
             </div>
           </div>
 
           <div className="mt-3 flex items-baseline gap-2 flex-wrap">
-            <span className="text-3xl font-extrabold text-white tracking-tight">
+            <span className="np-kpi-value text-white">
               {rxKbps}
             </span>
             <span className="text-xs font-semibold text-sky-400 uppercase">Kbps Rx</span>
             <span className="text-slate-600 font-bold mx-1">/</span>
-            <span className="text-3xl font-extrabold text-white tracking-tight">
+            <span className="np-kpi-value text-white">
               {txKbps}
             </span>
             <span className="text-xs font-semibold text-emerald-400 uppercase">Kbps Tx</span>

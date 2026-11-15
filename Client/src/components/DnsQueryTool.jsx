@@ -216,17 +216,16 @@ export default function DnsQueryTool() {
   const getBadgeStyle = (type) => {
     switch (type) {
       case 'A':
-        return 'bg-blue-600/90 text-white shadow-[0_0_8px_rgba(37,99,235,0.4)]';
+        return 'np-record-badge np-record-badge--a';
       case 'AAAA':
-        return 'bg-purple-600/90 text-white shadow-[0_0_8px_rgba(147,51,234,0.4)]';
+        return 'np-record-badge np-record-badge--aaaa';
       case 'NS':
-        return 'bg-amber-600/90 text-white shadow-[0_0_8px_rgba(217,119,6,0.4)]';
+        return 'np-record-badge np-record-badge--ns';
       case 'MX':
-        return 'bg-cyan-600/90 text-white shadow-[0_0_8px_rgba(8,145,178,0.4)]';
+        return 'np-record-badge np-record-badge--mx';
       case 'TXT':
-        return 'bg-slate-700 text-white border border-slate-600';
       default:
-        return 'bg-indigo-600 text-white';
+        return 'np-record-badge np-record-badge--txt';
     }
   };
 
@@ -236,47 +235,47 @@ export default function DnsQueryTool() {
   };
 
   return (
-    <div className="relative group bg-gradient-to-b from-[#131927] to-[#0e1320] border border-slate-800/90 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+    <div className="np-card flex flex-col justify-between">
       <div>
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
             <Globe className="w-4 h-4 text-blue-400" />
-            <h3 className="text-sm font-bold text-white tracking-tight uppercase">
-              Live DNS & Port Checker
+            <h3 className="np-card-title uppercase tracking-tight text-sm">
+              DNS & Port Checker
             </h3>
           </div>
           <span className="text-[11px] font-mono text-slate-400 bg-slate-900/80 px-2 py-0.5 rounded border border-slate-800">
             Real-Time Lookup
           </span>
         </div>
-        <p className="text-xs text-slate-400 mb-5">
-          Uji query record DNS domain apapun (A, AAAA, MX, TXT, NS) secara langsung dan cek ketersediaan port layanan.
+        <p className="np-card-subtitle mb-5">
+          Uji apakah domain mengarah ke IP yang benar dan pastikan port layanan terbuka
         </p>
 
         {/* Form Query */}
         <form onSubmit={onSubmitForm} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
             <div className="md:col-span-6">
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                INPUT DOMAIN / HOST
+              <label className="np-label">
+                INPUT
               </label>
               <input
                 type="text"
                 value={domain}
                 onChange={(e) => setDomain(e.target.value)}
-                placeholder="Contoh: google.com atau github.com"
-                className="w-full px-3.5 py-2.5 bg-slate-950/70 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500 font-mono shadow-inner"
+                placeholder="google.com atau junaramadhani.com"
+                className="np-input font-mono"
               />
             </div>
 
             <div className="md:col-span-4">
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+              <label className="np-label">
                 RESOLVER
               </label>
               <select
                 value={resolver}
                 onChange={(e) => setResolver(e.target.value)}
-                className="w-full px-3 py-2.5 bg-slate-950/70 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500 shadow-inner"
+                className="np-select"
               >
                 <option value="auto">Public DNS / Auto (Google & Cloudflare)</option>
                 <option value="192.168.10.1">Local BIND9 (192.168.10.1)</option>
@@ -288,7 +287,7 @@ export default function DnsQueryTool() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-xs rounded-xl transition shadow-md shadow-blue-500/25 flex items-center justify-center gap-1.5 disabled:opacity-50"
+                className="np-btn np-btn--primary w-full"
               >
                 {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
                 <span>Query</span>
@@ -298,69 +297,63 @@ export default function DnsQueryTool() {
         </form>
 
         {/* Status Bar */}
-        <div className="mt-5 flex items-center justify-between py-2.5 px-4 bg-slate-950/80 border border-slate-800 rounded-xl text-xs">
-          <div className="flex items-center gap-6">
-            <div>
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">
-                STATUS
-              </span>
+        <div className="np-query-meta mt-5">
+          <div>
+            <span className="np-label mb-1">
+              STATUS
+            </span>
+            <span
+              className={`font-semibold flex items-center gap-1.5 text-xs ${
+                statusText.includes('NOERROR')
+                  ? 'text-emerald-400'
+                  : statusText.includes('NXDOMAIN')
+                  ? 'text-rose-400'
+                  : 'text-amber-400'
+              }`}
+            >
               <span
-                className={`font-semibold flex items-center gap-1.5 ${
+                className={`np-dot ${
                   statusText.includes('NOERROR')
-                    ? 'text-emerald-400'
+                    ? 'np-dot--up'
                     : statusText.includes('NXDOMAIN')
-                    ? 'text-rose-400'
-                    : 'text-amber-400'
+                    ? 'np-dot--down'
+                    : 'bg-amber-400'
                 }`}
-              >
-                <span
-                  className={`w-1.5 h-1.5 rounded-full ${
-                    statusText.includes('NOERROR')
-                      ? 'bg-emerald-400 animate-pulse'
-                      : statusText.includes('NXDOMAIN')
-                      ? 'bg-rose-500'
-                      : 'bg-amber-400'
-                  }`}
-                />
-                {statusText || 'READY'}
-              </span>
-            </div>
-            <div>
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">
-                QUERIED DOMAIN
-              </span>
-              <span className="font-mono font-medium text-slate-200">
-                {queriedDomain || domain}
-              </span>
-            </div>
+              />
+              {statusText || 'READY'}
+            </span>
           </div>
-
-          <span className="text-[11px] font-mono text-slate-400">
-            {records.length} Records
-          </span>
+          <div>
+            <span className="np-label mb-1">
+              QUERIED DOMAIN
+            </span>
+            <span className="np-query-domain font-mono">
+              {queriedDomain || domain}
+            </span>
+          </div>
         </div>
 
         {/* Error Notification jika ada */}
         {errorMsg && (
-          <div className="mt-3 p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+          <div className="mb-4 p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {/* Tabel Records Hasil DNS */}
-        <div className="mt-5 overflow-x-auto max-h-56 overflow-y-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="sticky top-0 bg-[#0e1320] border-b border-slate-800">
-              <tr className="text-slate-400 pb-2">
-                <th className="pb-2.5 font-semibold uppercase tracking-wider text-[11px] w-16">Type</th>
-                <th className="pb-2.5 font-semibold uppercase tracking-wider text-[11px]">Name</th>
-                <th className="pb-2.5 font-semibold uppercase tracking-wider text-[11px]">Value</th>
-                <th className="pb-2.5 font-semibold uppercase tracking-wider text-[11px] w-16">TTL</th>
-                <th className="pb-2.5 font-semibold uppercase tracking-wider text-[11px] text-right w-20">Status</th>
+        <div className="np-table-wrap max-h-56 overflow-y-auto">
+          <table className="np-table">
+            <thead className="sticky top-0 bg-[#121a2a]">
+              <tr>
+                <th className="w-16">Type</th>
+                <th>Name</th>
+                <th>Value</th>
+                <th className="w-16">TTL</th>
+                <th className="text-right w-20">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/40 text-slate-300">
+            <tbody>
               {records.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-6 text-center text-slate-500 italic">
@@ -371,22 +364,18 @@ export default function DnsQueryTool() {
                 </tr>
               ) : (
                 records.map((r, i) => (
-                  <tr key={i} className="hover:bg-slate-800/25 transition">
-                    <td className="py-2.5">
-                      <span
-                        className={`inline-block px-2 py-0.5 rounded-md text-[10px] font-bold ${getBadgeStyle(
-                          r.type
-                        )}`}
-                      >
+                  <tr key={i}>
+                    <td>
+                      <span className={getBadgeStyle(r.type)}>
                         {r.type}
                       </span>
                     </td>
-                    <td className="py-2.5 font-mono text-slate-300 text-[11px]">{r.name}</td>
-                    <td className="py-2.5 font-mono text-slate-200 text-[11px] break-all">{r.value}</td>
-                    <td className="py-2.5 font-mono text-slate-400">{r.ttl}s</td>
-                    <td className="py-2.5 text-right">
+                    <td className="font-mono text-slate-300 text-xs">{r.name}</td>
+                    <td className="font-mono text-slate-200 text-xs break-all">{r.value}</td>
+                    <td className="font-mono text-slate-400 text-xs">{r.ttl}s</td>
+                    <td className="text-right">
                       <span className="inline-flex items-center gap-1.5 text-emerald-400 text-xs font-semibold">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        <span className="np-dot np-dot--up" />
                         Active
                       </span>
                     </td>

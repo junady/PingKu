@@ -1,32 +1,1176 @@
 @import "tailwindcss";
 
-@layer base {
-  html, body, #root {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    min-height: 100vh;
-    background-color: #0b0f19;
-    color: #f1f5f9;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Inter, 'Helvetica Neue', Arial, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
+/* ==========================================================================
+   NetPulse / PingKu NOC & Telemetry Dashboard — Master Stylesheet (Enhanced Depth)
+   ========================================================================== */
 
-  /* Custom Modern Sleek Scrollbar */
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+:root {
+  /* Surface & Background Colors (Dark NOC Theme) */
+  --np-bg-app: #090d16;
+  --np-bg-sidebar: #0d1320;
+  --np-bg-card: #121a2a;
+  --np-bg-card-top: #151f32;
+  --np-bg-elevated: #1a253b;
+  --np-bg-input: #0b101b;
+  --np-bg-hover: rgba(255, 255, 255, 0.045);
+  --np-bg-active-nav: rgba(59, 130, 246, 0.16);
+
+  /* Borders & Specular Highlights */
+  --np-border-subtle: rgba(148, 163, 184, 0.12);
+  --np-border-default: rgba(148, 163, 184, 0.2);
+  --np-border-strong: rgba(148, 163, 184, 0.3);
+  --np-border-active: rgba(59, 130, 246, 0.45);
+  --np-highlight-top: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+
+  /* Typography Colors */
+  --np-text-primary: #f8fafc;
+  --np-text-secondary: #94a3b8;
+  --np-text-muted: #64748b;
+
+  /* Brand & Semantic Accents */
+  --np-blue: #3b82f6;
+  --np-blue-hover: #2563eb;
+  --np-blue-soft: #60a5fa;
+  --np-green: #22c55e;
+  --np-emerald: #10b981;
+  --np-red: #ef4444;
+  --np-amber: #f59e0b;
+  --np-orange: #f97316;
+  --np-purple: #8b5cf6;
+  --np-cyan: #06b6d4;
+
+  /* Status Pill Surfaces */
+  --np-green-bg: rgba(16, 185, 129, 0.14);
+  --np-green-border: rgba(16, 185, 129, 0.32);
+  --np-red-bg: rgba(239, 68, 68, 0.14);
+  --np-red-border: rgba(239, 68, 68, 0.32);
+  --np-amber-bg: rgba(245, 158, 11, 0.14);
+  --np-amber-border: rgba(245, 158, 11, 0.32);
+
+  /* Light Canvas Tokens (Topology Map) */
+  --np-canvas-bg: #f8fafc;
+  --np-canvas-dot: #cbd5e1;
+  --np-node-bg: #ffffff;
+  --np-node-border: #e2e8f0;
+  --np-node-icon-bg: #f1f5f9;
+  --np-node-text: #0f172a;
+  --np-node-muted: #64748b;
+
+  /* Fonts */
+  --np-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --np-font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Radii & Layered Shadows */
+  --np-radius-sm: 6px;
+  --np-radius-md: 8px;
+  --np-radius-lg: 12px;
+  --np-radius-pill: 9999px;
+  --np-shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.25);
+  --np-shadow-card-hover: 0 14px 36px -10px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(59, 130, 246, 0.22);
+  --np-shadow-btn-primary: 0 4px 14px rgba(59, 130, 246, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  --np-shadow-node: 0 6px 18px -4px rgba(15, 23, 42, 0.12), 0 2px 4px rgba(15, 23, 42, 0.06);
+  --np-shadow-focus: 0 0 0 3px rgba(59, 130, 246, 0.28);
+
+  /* Motion */
+  --np-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Layout Dimensions */
+  --np-sidebar-width: 244px;
+  --np-drawer-width: 336px;
+  --np-topbar-height: 64px;
+}
+
+/* ==========================================================================
+   Base & Reset
+   ========================================================================== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+  background-color: var(--np-bg-app);
+  color: var(--np-text-primary);
+  font-family: var(--np-font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.np-mono {
+  font-family: var(--np-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Custom Dark Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--np-bg-app);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: var(--np-radius-pill);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.45);
+}
+
+/* ==========================================================================
+   1. App Shell (Sidebar + Main Content + Ambient Depth)
+   ========================================================================== */
+.np-app {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background-color: var(--np-bg-app);
+  background-image:
+    radial-gradient(ellipse 70% 40% at 60% -10%, rgba(59, 130, 246, 0.09), transparent),
+    radial-gradient(ellipse 40% 30% at 95% 10%, rgba(16, 185, 129, 0.05), transparent);
+}
+
+/* Sidebar */
+.np-sidebar {
+  width: var(--np-sidebar-width);
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #0f1626 0%, #0b101b 100%);
+  border-right: 1px solid var(--np-border-subtle);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 14px;
+  user-select: none;
+  z-index: 20;
+}
+
+.np-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 10px 24px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--np-text-primary);
+  text-decoration: none;
+}
+
+.np-brand-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--np-radius-md);
+  background: linear-gradient(135deg, #3b82f6 0%, #10b981 100%);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.np-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.np-nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--np-radius-md);
+  color: var(--np-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  border: 1px solid transparent;
+  cursor: pointer;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  transition: all 0.2s var(--np-ease);
+}
+
+.np-nav-item:hover {
+  background-color: var(--np-bg-hover);
+  color: var(--np-text-primary);
+  transform: translateX(2px);
+}
+
+.np-nav-item.is-active {
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.18) 0%, rgba(30, 41, 59, 0.55) 100%);
+  color: var(--np-text-primary);
+  border-color: var(--np-border-active);
+  box-shadow: var(--np-highlight-top), 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.np-nav-item.is-active::before {
+  content: '';
+  position: absolute;
+  left: -1px;
+  top: 22%;
+  height: 56%;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--np-blue);
+  box-shadow: 0 0 8px var(--np-blue);
+}
+
+.np-sidebar-footer {
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.np-connection-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: var(--np-radius-md);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.22), rgba(16, 185, 129, 0.1));
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  box-shadow: var(--np-highlight-top), 0 4px 14px rgba(16, 185, 129, 0.12);
+  color: #a7f3d0;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.np-connection-pill--offline {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.22), rgba(239, 68, 68, 0.1));
+  border-color: rgba(239, 68, 68, 0.35);
+  box-shadow: var(--np-highlight-top), 0 4px 14px rgba(239, 68, 68, 0.12);
+  color: #fca5a5;
+}
+
+/* Main Workspace */
+.np-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Top Bar */
+.np-topbar {
+  height: var(--np-topbar-height);
+  padding: 0 28px;
+  border-bottom: 1px solid var(--np-border-subtle);
+  background: rgba(11, 15, 23, 0.65);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.np-topbar-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.np-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.np-search-box {
+  position: relative;
+  width: 240px;
+}
+
+.np-search-box .np-input {
+  padding-left: 34px;
+  height: 36px;
+  background-color: rgba(18, 26, 42, 0.8);
+}
+
+.np-search-icon {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--np-text-muted);
+  pointer-events: none;
+}
+
+.np-icon-btn {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--np-radius-md);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--np-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s var(--np-ease);
+}
+
+.np-icon-btn:hover {
+  background-color: var(--np-bg-elevated);
+  border-color: var(--np-border-subtle);
+  color: var(--np-text-primary);
+}
+
+.np-badge-dot {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--np-red);
+  border: 1.5px solid var(--np-bg-app);
+  box-shadow: 0 0 6px var(--np-red);
+}
+
+.np-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid var(--np-border-strong);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 11px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+}
+
+/* Page Container */
+.np-content {
+  padding: 24px 28px 32px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.np-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--np-text-secondary);
+  margin-bottom: 18px;
+}
+
+.np-breadcrumb a {
+  color: var(--np-blue-soft);
+  text-decoration: none;
+}
+
+.np-breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+.np-page-header {
+  margin-bottom: 22px;
+}
+
+.np-page-title {
+  margin: 0 0 4px;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.np-page-subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: var(--np-text-secondary);
+}
+
+/* ==========================================================================
+   2. Cards, Typography & Common Controls (Layered Depth)
+   ========================================================================== */
+.np-card {
+  background: linear-gradient(180deg, var(--np-bg-card-top) 0%, var(--np-bg-card) 100%);
+  border: 1px solid var(--np-border-subtle);
+  border-radius: var(--np-radius-lg);
+  padding: 20px 22px;
+  box-shadow: var(--np-highlight-top), var(--np-shadow-card);
+  transition: transform 0.22s var(--np-ease), border-color 0.22s var(--np-ease), box-shadow 0.22s var(--np-ease);
+}
+
+.np-card:hover {
+  border-color: var(--np-border-default);
+}
+
+.np-card-header {
+  margin-bottom: 16px;
+}
+
+.np-card-title {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--np-text-primary);
+}
+
+.np-card-subtitle {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--np-text-secondary);
+}
+
+/* Form Elements */
+.np-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--np-text-secondary);
+  margin-bottom: 6px;
+}
+
+.np-input,
+.np-select {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  background-color: var(--np-bg-input);
+  border: 1px solid var(--np-border-default);
+  border-radius: var(--np-radius-md);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25);
+  color: var(--np-text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.np-input:focus,
+.np-select:focus {
+  border-color: var(--np-blue);
+  background-color: #0e1525;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2), var(--np-shadow-focus);
+}
+
+.np-input::placeholder {
+  color: var(--np-text-muted);
+}
+
+/* Buttons */
+.np-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: var(--np-radius-md);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.18s var(--np-ease);
+}
+
+.np-btn:active {
+  transform: translateY(1px);
+}
+
+.np-btn--primary {
+  background: linear-gradient(180deg, #4b91ff 0%, #2563eb 100%);
+  border-color: rgba(96, 165, 250, 0.4);
+  box-shadow: var(--np-shadow-btn-primary);
+  color: #ffffff;
+}
+
+.np-btn--primary:hover {
+  background: linear-gradient(180deg, #60a5fa 0%, #1d4ed8 100%);
+  box-shadow: 0 6px 18px rgba(59, 130, 246, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.np-btn--secondary {
+  background: linear-gradient(180deg, #1e293b 0%, #162032 100%);
+  border-color: var(--np-border-strong);
+  box-shadow: var(--np-highlight-top), 0 2px 6px rgba(0, 0, 0, 0.25);
+  color: var(--np-text-primary);
+}
+
+.np-btn--secondary:hover {
+  background: linear-gradient(180deg, #27354d 0%, #1c283e 100%);
+  border-color: rgba(148, 163, 184, 0.45);
+}
+
+.np-btn--danger-outline {
+  background-color: rgba(239, 68, 68, 0.05);
+  border-color: var(--np-red-border);
+  color: #f87171;
+}
+
+.np-btn--danger-outline:hover {
+  background-color: var(--np-red-bg);
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.18);
+}
+
+/* Status Dots & Pills */
+.np-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.np-dot--up {
+  background-color: var(--np-green);
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.75);
+}
+
+.np-dot--down {
+  background-color: var(--np-red);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.75);
+}
+
+.np-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: var(--np-radius-pill);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+}
+
+.np-pill--up,
+.np-pill--resolved {
+  background-color: var(--np-green-bg);
+  border-color: var(--np-green-border);
+  color: #4ade80;
+}
+
+.np-pill--down,
+.np-pill--critical {
+  background-color: var(--np-red-bg);
+  border-color: var(--np-red-border);
+  color: #f87171;
+}
+
+.np-pill--warning {
+  background-color: var(--np-amber-bg);
+  border-color: var(--np-amber-border);
+  color: #fbbf24;
+}
+
+/* ==========================================================================
+   3. Page 1: Overview Dashboard (KPI Cards, Heartbeat Strip, Alert Logs)
+   ========================================================================== */
+.np-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.np-kpi-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 146px;
+}
+
+.np-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--np-highlight-top), var(--np-shadow-card-hover);
+}
+
+.np-kpi-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--np-text-secondary);
+}
+
+.np-kpi-value {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--np-text-primary);
+  margin: 8px 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.np-kpi-unit {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--np-text-secondary);
+}
+
+.np-kpi-foot {
+  font-size: 12px;
+  color: var(--np-text-muted);
+  margin-top: 8px;
+}
+
+/* Sparkline SVG Container */
+.np-sparkline {
+  width: 100%;
+  height: 36px;
+  display: block;
+  filter: drop-shadow(0 2px 6px rgba(59, 130, 246, 0.25));
+}
+
+/* Progress Bar (RAM Usage) */
+.np-progress-track {
+  width: 100%;
+  height: 7px;
+  border-radius: var(--np-radius-pill);
+  background-color: #0b101b;
+  border: 1px solid var(--np-border-subtle);
+  overflow: hidden;
+  margin: 8px 0 4px;
+}
+
+.np-progress-fill {
+  height: 100%;
+  border-radius: var(--np-radius-pill);
+  background: linear-gradient(90deg, #38bdf8 0%, #3b82f6 100%);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+  transition: width 0.35s var(--np-ease);
+}
+
+/* Service & Host Status List */
+.np-host-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.np-host-row {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr auto auto;
+  align-items: center;
+  gap: 16px;
+  padding: 13px 10px;
+  margin: 0 -10px;
+  border-radius: var(--np-radius-md);
+  border-top: 1px solid var(--np-border-subtle);
+  transition: background-color 0.15s ease;
+}
+
+.np-host-row:hover {
+  background-color: rgba(255, 255, 255, 0.025);
+}
+
+.np-host-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+  color: var(--np-text-primary);
+}
+
+.np-host-ip {
+  font-family: var(--np-font-mono);
+  font-size: 12.5px;
+  color: var(--np-text-secondary);
+}
+
+/* 30-Bar Heartbeat Uptime Strip */
+.np-uptime-bars {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 18px;
+}
+
+.np-uptime-bar {
+  width: 4px;
+  height: 14px;
+  border-radius: 2px;
+  background-color: var(--np-border-strong);
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.np-uptime-bar:hover {
+  transform: scaleY(1.25);
+  filter: brightness(1.2);
+}
+
+.np-uptime-bar--up {
+  background: linear-gradient(180deg, #4ade80 0%, #16a34a 100%);
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.22);
+}
+
+.np-uptime-bar--down {
+  background: linear-gradient(180deg, #f87171 0%, #dc2626 100%);
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.35);
+  height: 10px;
+}
+
+.np-uptime-bar--idle {
+  background-color: #1e293b;
+  height: 4px;
+}
+
+/* Data Table (Alert Logs & Subnet Table) */
+.np-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.np-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+}
+
+.np-table th {
+  padding: 10px 12px 10px 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--np-text-secondary);
+  border-bottom: 1px solid var(--np-border-subtle);
+}
+
+.np-table td {
+  padding: 12px 12px 12px 0;
+  border-bottom: 1px solid var(--np-border-subtle);
+  color: var(--np-text-primary);
+  vertical-align: middle;
+}
+
+.np-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.np-table tbody tr:hover td {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.np-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* ==========================================================================
+   4. Page 2: Interactive Topology Map + Inspector Drawer
+   ========================================================================== */
+.np-topology-shell {
+  display: flex;
+  flex: 1;
+  min-height: 580px;
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.np-topology-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.np-topology-canvas {
+  position: relative;
+  flex: 1;
+  min-height: 520px;
+  background-color: var(--np-canvas-bg);
+  background-image: radial-gradient(var(--np-canvas-dot) 1.25px, transparent 1.25px);
+  background-size: 20px 20px;
+  border-radius: var(--np-radius-lg);
+  border: 1px solid var(--np-node-border);
+  box-shadow: inset 0 2px 12px rgba(15, 23, 42, 0.06), var(--np-shadow-card);
+  overflow: hidden;
+}
+
+/* Draggable Topology Node Card */
+.np-topo-node {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 205px;
+  padding: 12px 14px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border: 1.5px solid var(--np-node-border);
+  border-radius: 12px;
+  box-shadow: var(--np-shadow-node);
+  color: var(--np-node-text);
+  cursor: grab;
+  user-select: none;
+  transition: transform 0.18s var(--np-ease), border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.np-topo-node:hover {
+  transform: translateY(-2px);
+  border-color: #94a3b8;
+  box-shadow: 0 10px 24px -6px rgba(15, 23, 42, 0.16);
+}
+
+.np-topo-node.is-selected {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2), 0 10px 24px -6px rgba(37, 99, 235, 0.22);
+}
+
+.np-topo-node.is-down {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2), 0 10px 24px -6px rgba(239, 68, 68, 0.25);
+}
+
+.np-topo-node-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--np-radius-md);
+  background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
+  color: #334155;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.np-topo-node-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.np-topo-node-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.np-topo-node-status--up {
+  color: #16a34a;
+}
+
+.np-topo-node-status--down {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+/* Floating Zoom/Fit/Lock Controls */
+.np-topo-controls {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 10;
+}
+
+.np-topo-control-group {
+  display: flex;
+  flex-direction: column;
+  background-color: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--np-node-border);
+  border-radius: var(--np-radius-md);
+  box-shadow: var(--np-shadow-node);
+  overflow: hidden;
+}
+
+.np-topo-control-btn {
+  width: 34px;
+  height: 34px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--np-node-border);
+  color: #334155;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.np-topo-control-btn:last-child {
+  border-bottom: none;
+}
+
+.np-topo-control-btn:hover {
+  background-color: #f1f5f9;
+}
+
+/* Right Slide-Over Inspector Drawer */
+.np-drawer {
+  width: var(--np-drawer-width);
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #101727 0%, #0b101b 100%);
+  border-left: 1px solid var(--np-border-subtle);
+  box-shadow: -8px 0 28px rgba(0, 0, 0, 0.35);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  z-index: 20;
+}
+
+.np-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--np-border-subtle);
+}
+
+.np-drawer-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.np-kv-list {
+  display: flex;
+  flex-direction: column;
+  margin: 8px 0 18px;
+}
+
+.np-kv-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--np-border-subtle);
+  font-size: 13px;
+}
+
+.np-kv-key {
+  color: var(--np-text-secondary);
+}
+
+.np-kv-val {
+  color: var(--np-text-primary);
+  font-weight: 500;
+  text-align: right;
+}
+
+.np-drawer-actions {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 16px;
+}
+
+.np-drawer-actions-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* ==========================================================================
+   5. Page 3: Network Tools (DNS Checker & VLSM Subnet Calculator)
+   ========================================================================== */
+.np-tools-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+.np-form-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.np-form-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.np-query-meta {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding-bottom: 16px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--np-border-subtle);
+}
+
+.np-query-domain {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--np-text-primary);
+}
+
+/* DNS Record Type Badges */
+.np-record-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 24px;
+  padding: 0 7px;
+  border-radius: var(--np-radius-sm);
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.np-record-badge--a {
+  background: linear-gradient(180deg, #4b91ff 0%, #2563eb 100%);
+}
+.np-record-badge--aaaa {
+  background: linear-gradient(180deg, #a78bfa 0%, #7c3aed 100%);
+}
+.np-record-badge--ns {
+  background: linear-gradient(180deg, #fb923c 0%, #ea580c 100%);
+}
+.np-record-badge--mx {
+  background: linear-gradient(180deg, #22d3ee 0%, #0891b2 100%);
+}
+.np-record-badge--txt {
+  background: linear-gradient(180deg, #64748b 0%, #475569 100%);
+}
+
+/* VLSM Host Requirements & Proportional Allocation Bar */
+.np-section-title {
+  margin: 0 0 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--np-text-primary);
+}
+
+.np-host-req-list {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13.5px;
+  color: var(--np-text-secondary);
+}
+
+.np-vlsm-bar {
+  display: flex;
+  width: 100%;
+  height: 34px;
+  border-radius: var(--np-radius-md);
+  background-color: #0b101b;
+  padding: 3px;
+  border: 1px solid var(--np-border-subtle);
+  overflow: hidden;
+  gap: 3px;
+  margin-bottom: 18px;
+}
+
+.np-vlsm-segment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+  padding: 0 8px;
+  border-radius: 6px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: filter 0.15s ease, transform 0.15s ease;
+}
+
+.np-vlsm-segment:hover {
+  filter: brightness(1.1);
+}
+
+.np-vlsm-segment--lan1 {
+  background: linear-gradient(180deg, #6b8afd 0%, #4a6cf7 100%);
+}
+.np-vlsm-segment--lan2 {
+  background: linear-gradient(180deg, #43c58e 0%, #279d6c 100%);
+}
+.np-vlsm-segment--lan3 {
+  background: linear-gradient(180deg, #f79d52 0%, #e07624 100%);
+}
+.np-vlsm-segment--unused {
+  background: linear-gradient(180deg, #475569 0%, #334155 100%);
+  color: #cbd5e1;
+}
+
+/* ==========================================================================
+   6. Responsive Breakpoints
+   ========================================================================== */
+@media (max-width: 1200px) {
+  .np-tools-grid {
+    grid-template-columns: 1fr;
   }
-  ::-webkit-scrollbar-track {
-    background: transparent;
+}
+
+@media (max-width: 1024px) {
+  .np-kpi-grid {
+    grid-template-columns: 1fr;
   }
-  ::-webkit-scrollbar-thumb {
-    background: #1e293b;
-    border-radius: 9999px;
+  .np-topology-shell {
+    flex-direction: column;
   }
-  ::-webkit-scrollbar-thumb:hover {
-    background: #334155;
+  .np-drawer {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid var(--np-border-subtle);
+  }
+}
+
+@media (max-width: 768px) {
+  .np-app {
+    flex-direction: column;
+  }
+  .np-sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--np-border-subtle);
+  }
+  .np-host-row {
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+  }
+  .np-uptime-bars {
+    display: none;
+  }
+  .np-search-box {
+    display: none;
   }
 }

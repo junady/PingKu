@@ -135,26 +135,26 @@ export default function VlsmCalculator() {
   };
 
   return (
-    <div className="relative group bg-gradient-to-b from-[#131927] to-[#0e1320] border border-slate-800/90 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+    <div className="np-card flex flex-col justify-between">
       <div>
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
             <Calculator className="w-4 h-4 text-emerald-400" />
-            <h3 className="text-sm font-bold text-white tracking-tight uppercase">
-              Interactive VLSM Subnet Calculator
+            <h3 className="np-card-title uppercase tracking-tight text-sm">
+              VLSM Subnet Calculator
             </h3>
           </div>
           <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
             Real-Time Math
           </span>
         </div>
-        <p className="text-xs text-slate-400 mb-5">
-          Pecah blok IP menjadi subnet optimal otomatis berdasarkan kebutuhan host perangkat.
+        <p className="np-card-subtitle mb-5">
+          Pecah blok IP jaringan menjadi beberapa subnet otomatis berdasarkan jumlah perangkat
         </p>
 
         {/* Input Base IP/CIDR */}
         <div className="mb-5">
-          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+          <label className="np-label">
             Base Network ID & Prefix (CIDR)
           </label>
           <div className="flex gap-2">
@@ -163,12 +163,12 @@ export default function VlsmCalculator() {
               value={baseCidr}
               onChange={(e) => setBaseCidr(e.target.value)}
               placeholder="192.168.10.0/24"
-              className="flex-1 px-3.5 py-2.5 bg-slate-950/70 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500 font-mono shadow-inner"
+              className="np-input font-mono flex-1"
             />
             <button
               type="button"
               onClick={handleAddRequirement}
-              className="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 transition flex items-center gap-1.5 shrink-0"
+              className="np-btn np-btn--secondary shrink-0"
             >
               <Plus className="w-3.5 h-3.5 text-emerald-400" />
               <span>Add Subnet</span>
@@ -179,8 +179,8 @@ export default function VlsmCalculator() {
         {/* Dynamic Requirements List */}
         <div className="mb-5">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              Host Requirements (Dapat Diedit & Ditambah Langsung)
+            <span className="np-section-title text-xs">
+              Host Requirements
             </span>
             <span className="text-[11px] text-slate-500 font-mono">
               Total Subnets: {requirements.length}
@@ -233,11 +233,11 @@ export default function VlsmCalculator() {
           </div>
         )}
 
-        {/* Proportional IP block allocation bar */}
+        {/* Proportional IP block allocation bar (Master Stylesheet) */}
         {calculationResult && (
           <div className="mb-5">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <span className="np-section-title text-xs">
                 Proportional IP Block Allocation
               </span>
               <span className="text-[11px] font-mono text-slate-400">
@@ -245,14 +245,14 @@ export default function VlsmCalculator() {
               </span>
             </div>
 
-            <div className="w-full h-9 rounded-xl overflow-hidden flex bg-slate-900/90 border border-slate-800 text-[11px] font-semibold text-white select-none p-1 gap-1">
+            <div className="np-vlsm-bar">
               {calculationResult.subnets.map((sub, idx) => {
                 const pct = (sub.blockSize / calculationResult.totalBlockSize) * 100;
                 return (
                   <div
                     key={idx}
-                    className={`${sub.color} flex items-center justify-center truncate px-2 rounded-lg shadow-sm`}
-                    style={{ width: `${Math.max(10, pct)}%` }}
+                    className={`np-vlsm-segment ${sub.color || (idx === 0 ? 'np-vlsm-segment--lan1' : idx === 1 ? 'np-vlsm-segment--lan2' : 'np-vlsm-segment--lan3')}`}
+                    style={{ flex: Math.max(1, Math.round(pct)) }}
                     title={`${sub.name} (${sub.blockSize} IPs - ${sub.cidr})`}
                   >
                     <span className="truncate">
@@ -263,9 +263,9 @@ export default function VlsmCalculator() {
               })}
               {calculationResult.unusedSize > 0 && (
                 <div
-                  className="bg-slate-800/80 rounded-lg flex items-center justify-center truncate px-2 text-slate-400 border border-slate-700/40"
+                  className="np-vlsm-segment np-vlsm-segment--unused"
                   style={{
-                    width: `${(calculationResult.unusedSize / calculationResult.totalBlockSize) * 100}%`,
+                    flex: Math.max(1, Math.round((calculationResult.unusedSize / calculationResult.totalBlockSize) * 100)),
                   }}
                   title={`Unused (${calculationResult.unusedSize} IPs)`}
                 >
@@ -276,33 +276,33 @@ export default function VlsmCalculator() {
           </div>
         )}
 
-        {/* Subnet Table */}
+        {/* Subnet Table (Master Stylesheet) */}
         {calculationResult && (
-          <div className="overflow-x-auto max-h-56 overflow-y-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="sticky top-0 bg-[#0e1320] border-b border-slate-800">
-                <tr className="text-slate-400 pb-2">
-                  <th className="pb-2 font-semibold uppercase text-[10px]">Subnet Name</th>
-                  <th className="pb-2 font-semibold uppercase text-[10px] w-14">CIDR</th>
-                  <th className="pb-2 font-semibold uppercase text-[10px]">Network ID</th>
-                  <th className="pb-2 font-semibold uppercase text-[10px]">Usable Range</th>
-                  <th className="pb-2 font-semibold uppercase text-[10px]">Broadcast</th>
-                  <th className="pb-2 font-semibold uppercase text-[10px] text-right w-16">Hosts</th>
+          <div className="np-table-wrap max-h-56 overflow-y-auto">
+            <table className="np-table">
+              <thead className="sticky top-0 bg-[#121a2a]">
+                <tr>
+                  <th>Subnet Name</th>
+                  <th className="w-14">CIDR</th>
+                  <th>Network ID</th>
+                  <th>Usable Range</th>
+                  <th>Broadcast</th>
+                  <th className="text-right w-16">Hosts</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/40 text-slate-300">
+              <tbody>
                 {calculationResult.subnets.map((sub, i) => (
-                  <tr key={i} className="hover:bg-slate-800/25 transition">
-                    <td className="py-2.5 font-medium text-slate-200">{sub.name}</td>
-                    <td className="py-2.5 font-mono">
+                  <tr key={i}>
+                    <td className="font-medium text-slate-200">{sub.name}</td>
+                    <td className="font-mono">
                       <span className="bg-slate-900 px-1.5 py-0.5 rounded text-sky-400 border border-slate-800 font-bold">
                         {sub.cidr}
                       </span>
                     </td>
-                    <td className="py-2.5 font-mono text-slate-300">{sub.netId}</td>
-                    <td className="py-2.5 font-mono text-slate-300">{sub.usableRange}</td>
-                    <td className="py-2.5 font-mono text-slate-300">{sub.broadcast}</td>
-                    <td className="py-2.5 text-right font-mono text-slate-400 font-bold">
+                    <td className="font-mono text-slate-300 text-xs">{sub.netId}</td>
+                    <td className="font-mono text-slate-300 text-xs">{sub.usableRange}</td>
+                    <td className="font-mono text-slate-300 text-xs">{sub.broadcast}</td>
+                    <td className="text-right font-mono text-slate-400 font-bold text-xs">
                       {sub.usableHosts} / {sub.neededHosts}
                     </td>
                   </tr>
