@@ -138,7 +138,7 @@ export default function PortScannerTool() {
                 disabled={isScanning}
                 onChange={(e) => setHost(e.target.value)}
                 placeholder="192.168.10.1 atau 127.0.0.1"
-                className="w-full px-3.5 py-2.5 bg-slate-950/70 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500 font-mono shadow-inner"
+                className="w-full px-3.5 py-2.5 bg-slate-950/70 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-teal-500 font-mono shadow-inner"
               />
             </div>
 
@@ -152,7 +152,7 @@ export default function PortScannerTool() {
                 disabled={isScanning}
                 onChange={(e) => setCustomPortsInput(e.target.value)}
                 placeholder="Misal: 22, 53, 80, 8080"
-                className="w-full px-3.5 py-2.5 bg-slate-950/70 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500 font-mono shadow-inner"
+                className="w-full px-3.5 py-2.5 bg-slate-950/70 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-teal-500 font-mono shadow-inner"
               />
             </div>
 
@@ -160,7 +160,7 @@ export default function PortScannerTool() {
               <button
                 type="submit"
                 disabled={isScanning}
-                className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-xs rounded-xl transition shadow-md shadow-blue-500/25 flex items-center justify-center gap-1.5 disabled:opacity-50"
+                className="w-full py-2.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-semibold text-xs rounded-xl transition shadow-md shadow-teal-500/25 flex items-center justify-center gap-1.5 disabled:opacity-50"
               >
                 {isScanning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5 fill-current" />}
                 <span>{isScanning ? 'Scanning...' : 'Scan Ports'}</span>
@@ -182,7 +182,7 @@ export default function PortScannerTool() {
                 }}
                 className={`px-3 py-1 rounded-lg text-xs font-semibold transition border ${
                   selectedPreset === idx && !customPortsInput
-                    ? 'bg-blue-600/20 text-blue-400 border-blue-500/40'
+                    ? 'bg-teal-600/20 text-teal-400 border-teal-500/40'
                     : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:text-slate-200'
                 }`}
               >
@@ -201,7 +201,7 @@ export default function PortScannerTool() {
             </div>
             <div className="w-full h-2 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
               <div
-                className="h-full bg-gradient-to-r from-sky-400 to-blue-600 transition-all duration-300"
+                className="h-full bg-gradient-to-r from-teal-400 to-emerald-500 transition-all duration-300"
                 style={{ width: `${scanProgress}%` }}
               />
             </div>

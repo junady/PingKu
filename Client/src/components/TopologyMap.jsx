@@ -249,7 +249,7 @@ export default function TopologyMap({
         <div className="z-10 flex items-center justify-between px-8 py-4 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
           <div>
             <div className="flex items-center gap-2">
-              <Layers className="w-5 h-5 text-blue-600" />
+              <Layers className="w-5 h-5 text-teal-600" />
               <h1 className="text-xl font-bold text-slate-900 tracking-tight">
                 Interactive Topology Map
               </h1>
@@ -503,7 +503,7 @@ export default function TopologyMap({
                   placeholder="Contoh: DNS Server BIND9"
                   value={formData.label}
                   onChange={(e) => setFormData({ ...formData, label: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-white focus:outline-none focus:border-blue-500 shadow-inner"
+                  className="w-full px-3.5 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-white focus:outline-none focus:border-teal-500 shadow-inner"
                 />
               </div>
 
@@ -515,7 +515,7 @@ export default function TopologyMap({
                   <select
                     value={formData.type}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-white focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-white focus:outline-none focus:border-teal-500"
                   >
                     <option value="router">Router (MikroTik)</option>
                     <option value="switch">Switch</option>
@@ -531,7 +531,7 @@ export default function TopologyMap({
                   <select
                     value={formData.parent_id}
                     onChange={(e) => setFormData({ ...formData, parent_id: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-white focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-white focus:outline-none focus:border-teal-500"
                   >
                     <option value="">-- Root (Tanpa Parent) --</option>
                     {rawNodes.map((n) => (
@@ -554,7 +554,7 @@ export default function TopologyMap({
                     placeholder="192.168.10.1"
                     value={formData.ip_address}
                     onChange={(e) => setFormData({ ...formData, ip_address: e.target.value })}
-                    className="w-full px-3.5 py-2 bg-slate-900 border border-slate-700/80 rounded-xl font-mono text-white focus:outline-none focus:border-blue-500 shadow-inner"
+                    className="w-full px-3.5 py-2 bg-slate-900 border border-slate-700/80 rounded-xl font-mono text-white focus:outline-none focus:border-teal-500 shadow-inner"
                   />
                 </div>
 
@@ -567,7 +567,7 @@ export default function TopologyMap({
                     placeholder="53"
                     value={formData.port}
                     onChange={(e) => setFormData({ ...formData, port: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl font-mono text-white focus:outline-none focus:border-blue-500 shadow-inner"
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl font-mono text-white focus:outline-none focus:border-teal-500 shadow-inner"
                   />
                 </div>
               </div>
@@ -582,7 +582,7 @@ export default function TopologyMap({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition shadow-md shadow-blue-500/25"
+                  className="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white font-semibold rounded-xl transition shadow-md shadow-teal-500/25"
                 >
                   Simpan Node
                 </button>
@@ -620,7 +620,7 @@ export default function TopologyMap({
                   required
                   value={editFormData.label}
                   onChange={(e) => setEditFormData({ ...editFormData, label: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-white focus:outline-none focus:border-blue-500 shadow-inner"
+                  className="w-full px-3.5 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-white focus:outline-none focus:border-teal-500 shadow-inner"
                 />
               </div>
 
@@ -632,7 +632,7 @@ export default function TopologyMap({
                   <select
                     value={editFormData.type}
                     onChange={(e) => setEditFormData({ ...editFormData, type: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-white focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-white focus:outline-none focus:border-teal-500"
                   >
                     <option value="router">Router (MikroTik)</option>
                     <option value="switch">Switch</option>
@@ -648,7 +648,7 @@ export default function TopologyMap({
                   <select
                     value={editFormData.parent_id}
                     onChange={(e) => setEditFormData({ ...editFormData, parent_id: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-white focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-white focus:outline-none focus:border-teal-500"
                   >
                     <option value="">-- Root (Tanpa Parent) --</option>
                     {rawNodes
@@ -672,7 +672,7 @@ export default function TopologyMap({
                     required
                     value={editFormData.ip_address}
                     onChange={(e) => setEditFormData({ ...editFormData, ip_address: e.target.value })}
-                    className="w-full px-3.5 py-2 bg-slate-900 border border-slate-700/80 rounded-xl font-mono text-white focus:outline-none focus:border-blue-500 shadow-inner"
+                    className="w-full px-3.5 py-2 bg-slate-900 border border-slate-700/80 rounded-xl font-mono text-white focus:outline-none focus:border-teal-500 shadow-inner"
                   />
                 </div>
 
@@ -684,7 +684,7 @@ export default function TopologyMap({
                     type="number"
                     value={editFormData.port}
                     onChange={(e) => setEditFormData({ ...editFormData, port: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl font-mono text-white focus:outline-none focus:border-blue-500 shadow-inner"
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl font-mono text-white focus:outline-none focus:border-teal-500 shadow-inner"
                   />
                 </div>
               </div>
@@ -699,7 +699,7 @@ export default function TopologyMap({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition shadow-md shadow-blue-500/25"
+                  className="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white font-semibold rounded-xl transition shadow-md shadow-teal-500/25"
                 >
                   Simpan Perubahan
                 </button>

@@ -45,7 +45,7 @@ export default function AlertLogPanel({ logs = [] }) {
     <div className="np-card">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Clock className="w-4 h-4 text-sky-400" />
+          <Clock className="w-4 h-4 text-teal-400" />
           <h3 className="np-card-title uppercase tracking-tight text-sm">
             Recent Alert Logs
           </h3>

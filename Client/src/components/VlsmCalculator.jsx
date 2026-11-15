@@ -22,7 +22,7 @@ function cidrToMask(prefix) {
 }
 
 const PRESET_COLORS = [
-  'bg-gradient-to-r from-blue-600 to-blue-500',
+  'bg-gradient-to-r from-teal-600 to-teal-500',
   'bg-gradient-to-r from-emerald-600 to-emerald-500',
   'bg-gradient-to-r from-amber-600 to-amber-500',
   'bg-gradient-to-r from-purple-600 to-purple-500',
@@ -197,7 +197,7 @@ export default function VlsmCalculator() {
                   type="text"
                   value={req.name}
                   onChange={(e) => handleUpdateRequirement(req.id, 'name', e.target.value)}
-                  className="flex-1 px-2.5 py-1.5 bg-slate-900 border border-slate-700/70 rounded-lg text-xs text-white focus:outline-none focus:border-blue-500 font-medium"
+                  className="flex-1 px-2.5 py-1.5 bg-slate-900 border border-slate-700/70 rounded-lg text-xs text-white focus:outline-none focus:border-teal-500 font-medium"
                 />
 
                 <div className="flex items-center gap-1.5">
@@ -207,7 +207,7 @@ export default function VlsmCalculator() {
                     max="1000"
                     value={req.hosts}
                     onChange={(e) => handleUpdateRequirement(req.id, 'hosts', e.target.value)}
-                    className="w-20 px-2.5 py-1.5 bg-slate-900 border border-slate-700/70 rounded-lg text-xs text-white font-mono text-center focus:outline-none focus:border-blue-500"
+                    className="w-20 px-2.5 py-1.5 bg-slate-900 border border-slate-700/70 rounded-lg text-xs text-white font-mono text-center focus:outline-none focus:border-teal-500"
                   />
                   <span className="text-[11px] text-slate-400">hosts</span>
                 </div>

@@ -125,7 +125,7 @@ export default function IpGeoTool() {
             {/* Grid Detail Info */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80 flex items-start gap-2.5">
-                <Building className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                <Building className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
                 <div className="min-w-0">
                   <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
                     ISP / ORGANISASI

@@ -8,18 +8,18 @@
   /* Surface & Background Colors (Dark NOC Theme) */
   --np-bg-app: #090d16;
   --np-bg-sidebar: #0d1320;
-  --np-bg-card: #121a2a;
+  --np-bg-card: #111827;
   --np-bg-card-top: #151f32;
   --np-bg-elevated: #1a253b;
   --np-bg-input: #0b101b;
   --np-bg-hover: rgba(255, 255, 255, 0.045);
-  --np-bg-active-nav: rgba(59, 130, 246, 0.16);
+  --np-bg-active-nav: rgba(20, 184, 166, 0.16);
 
   /* Borders & Specular Highlights */
-  --np-border-subtle: rgba(148, 163, 184, 0.12);
+  --np-border-subtle: rgba(45, 212, 191, 0.14);
   --np-border-default: rgba(148, 163, 184, 0.2);
   --np-border-strong: rgba(148, 163, 184, 0.3);
-  --np-border-active: rgba(59, 130, 246, 0.45);
+  --np-border-active: rgba(45, 212, 191, 0.45);
   --np-highlight-top: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 
   /* Typography Colors */
@@ -27,10 +27,15 @@
   --np-text-secondary: #94a3b8;
   --np-text-muted: #64748b;
 
-  /* Brand & Semantic Accents */
-  --np-blue: #3b82f6;
-  --np-blue-hover: #2563eb;
-  --np-blue-soft: #60a5fa;
+  /* Brand & Semantic Accents (Obsidian + Teal/Cyan Harmony) */
+  --np-teal: #14b8a6;
+  --np-teal-light: #2dd4bf;
+  --np-teal-hover: #0d9488;
+  --np-teal-soft: #5eead4;
+  --np-teal-glow: rgba(45, 212, 191, 0.25);
+  --np-blue: #14b8a6;
+  --np-blue-hover: #0d9488;
+  --np-blue-soft: #2dd4bf;
   --np-green: #22c55e;
   --np-emerald: #10b981;
   --np-red: #ef4444;
@@ -66,10 +71,10 @@
   --np-radius-lg: 12px;
   --np-radius-pill: 9999px;
   --np-shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.25);
-  --np-shadow-card-hover: 0 14px 36px -10px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(59, 130, 246, 0.22);
-  --np-shadow-btn-primary: 0 4px 14px rgba(59, 130, 246, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  --np-shadow-card-hover: 0 14px 36px -10px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(45, 212, 191, 0.25);
+  --np-shadow-btn-primary: 0 4px 14px rgba(20, 184, 166, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
   --np-shadow-node: 0 6px 18px -4px rgba(15, 23, 42, 0.12), 0 2px 4px rgba(15, 23, 42, 0.06);
-  --np-shadow-focus: 0 0 0 3px rgba(59, 130, 246, 0.28);
+  --np-shadow-focus: 0 0 0 3px rgba(45, 212, 191, 0.28);
 
   /* Motion */
   --np-ease: cubic-bezier(0.16, 1, 0.3, 1);
@@ -136,7 +141,7 @@ body,
   overflow: hidden;
   background-color: var(--np-bg-app);
   background-image:
-    radial-gradient(ellipse 70% 40% at 60% -10%, rgba(59, 130, 246, 0.09), transparent),
+    radial-gradient(ellipse 70% 40% at 60% -10%, rgba(20, 184, 166, 0.1), transparent),
     radial-gradient(ellipse 40% 30% at 95% 10%, rgba(16, 185, 129, 0.05), transparent);
 }
 
@@ -144,7 +149,7 @@ body,
 .np-sidebar {
   width: var(--np-sidebar-width);
   flex-shrink: 0;
-  background: linear-gradient(180deg, #0f1626 0%, #0b101b 100%);
+  background: linear-gradient(180deg, #0e1524 0%, #090e18 100%);
   border-right: 1px solid var(--np-border-subtle);
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
   display: flex;
@@ -170,8 +175,8 @@ body,
   width: 32px;
   height: 32px;
   border-radius: var(--np-radius-md);
-  background: linear-gradient(135deg, #3b82f6 0%, #10b981 100%);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  background: linear-gradient(135deg, #14b8a6 0%, #10b981 100%);
+  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -212,7 +217,7 @@ body,
 }
 
 .np-nav-item.is-active {
-  background: linear-gradient(90deg, rgba(59, 130, 246, 0.18) 0%, rgba(30, 41, 59, 0.55) 100%);
+  background: linear-gradient(90deg, rgba(20, 184, 166, 0.18) 0%, rgba(30, 41, 59, 0.55) 100%);
   color: var(--np-text-primary);
   border-color: var(--np-border-active);
   box-shadow: var(--np-highlight-top), 0 4px 12px rgba(0, 0, 0, 0.2);
@@ -226,8 +231,8 @@ body,
   height: 56%;
   width: 3px;
   border-radius: 0 3px 3px 0;
-  background: var(--np-blue);
-  box-shadow: 0 0 8px var(--np-blue);
+  background: var(--np-teal-light);
+  box-shadow: 0 0 10px var(--np-teal-light);
 }
 
 .np-sidebar-footer {
@@ -380,7 +385,7 @@ body,
 }
 
 .np-breadcrumb a {
-  color: var(--np-blue-soft);
+  color: var(--np-teal-light);
   text-decoration: none;
 }
 
@@ -467,7 +472,7 @@ body,
 
 .np-input:focus,
 .np-select:focus {
-  border-color: var(--np-blue);
+  border-color: var(--np-teal);
   background-color: #0e1525;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2), var(--np-shadow-focus);
 }
@@ -499,15 +504,15 @@ body,
 }
 
 .np-btn--primary {
-  background: linear-gradient(180deg, #4b91ff 0%, #2563eb 100%);
-  border-color: rgba(96, 165, 250, 0.4);
+  background: linear-gradient(180deg, #14b8a6 0%, #0d9488 100%);
+  border-color: rgba(45, 212, 191, 0.45);
   box-shadow: var(--np-shadow-btn-primary);
   color: #ffffff;
 }
 
 .np-btn--primary:hover {
-  background: linear-gradient(180deg, #60a5fa 0%, #1d4ed8 100%);
-  box-shadow: 0 6px 18px rgba(59, 130, 246, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  background: linear-gradient(180deg, #2dd4bf 0%, #0f766e 100%);
+  box-shadow: 0 6px 18px rgba(20, 184, 166, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
   transform: translateY(-1px);
 }
 
@@ -645,7 +650,7 @@ body,
   width: 100%;
   height: 36px;
   display: block;
-  filter: drop-shadow(0 2px 6px rgba(59, 130, 246, 0.25));
+  filter: drop-shadow(0 2px 6px rgba(45, 212, 191, 0.25));
 }
 
 /* Progress Bar (RAM Usage) */
@@ -662,8 +667,8 @@ body,
 .np-progress-fill {
   height: 100%;
   border-radius: var(--np-radius-pill);
-  background: linear-gradient(90deg, #38bdf8 0%, #3b82f6 100%);
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+  background: linear-gradient(90deg, #2dd4bf 0%, #0d9488 100%);
+  box-shadow: 0 0 10px rgba(45, 212, 191, 0.5);
   transition: width 0.35s var(--np-ease);
 }
 
@@ -839,8 +844,8 @@ body,
 }
 
 .np-topo-node.is-selected {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2), 0 10px 24px -6px rgba(37, 99, 235, 0.22);
+  border-color: var(--np-teal);
+  box-shadow: 0 0 0 4px rgba(45, 212, 191, 0.25), 0 10px 24px -6px rgba(13, 148, 136, 0.22);
 }
 
 .np-topo-node.is-down {
@@ -1052,7 +1057,7 @@ body,
 }
 
 .np-record-badge--a {
-  background: linear-gradient(180deg, #4b91ff 0%, #2563eb 100%);
+  background: linear-gradient(180deg, #14b8a6 0%, #0d9488 100%);
 }
 .np-record-badge--aaaa {
   background: linear-gradient(180deg, #a78bfa 0%, #7c3aed 100%);

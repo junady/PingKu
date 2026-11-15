@@ -239,7 +239,7 @@ export default function DnsQueryTool() {
       <div>
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
-            <Globe className="w-4 h-4 text-blue-400" />
+            <Globe className="w-4 h-4 text-teal-400" />
             <h3 className="np-card-title uppercase tracking-tight text-sm">
               DNS & Port Checker
             </h3>

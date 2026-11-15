@@ -134,7 +134,7 @@ export default function App() {
                   Network Tools
                 </h1>
                 <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-0.5">
-                  <span className="text-blue-400 font-medium">Home</span>
+                  <span className="text-teal-400 font-medium">Home</span>
                   <span>/</span>
                   <span>Network Tools</span>
                 </div>

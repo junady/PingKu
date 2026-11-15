@@ -174,7 +174,7 @@ export default function LivePingTool() {
               disabled={isPinging}
               onChange={(e) => setHost(e.target.value)}
               placeholder="192.168.10.1 atau 8.8.8.8"
-              className="w-full px-3.5 py-2.5 bg-slate-950/70 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500 font-mono shadow-inner disabled:opacity-60"
+              className="w-full px-3.5 py-2.5 bg-slate-950/70 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-teal-500 font-mono shadow-inner disabled:opacity-60"
             />
           </div>
 
@@ -186,7 +186,7 @@ export default function LivePingTool() {
               value={pingIntervalMs}
               disabled={isPinging}
               onChange={(e) => setPingIntervalMs(Number(e.target.value))}
-              className="w-full px-3 py-2.5 bg-slate-950/70 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500 shadow-inner disabled:opacity-60"
+              className="w-full px-3 py-2.5 bg-slate-950/70 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-teal-500 shadow-inner disabled:opacity-60"
             >
               <option value="500">Fast (500ms)</option>
               <option value="1000">Normal (1s)</option>

@@ -32,12 +32,12 @@ function CpuAreaSparkline({ history }) {
     >
       <defs>
         <linearGradient id="cpuStroke" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#38bdf8" />
-          <stop offset="100%" stopColor="#34d399" />
+          <stop offset="0%" stopColor="#2dd4bf" />
+          <stop offset="100%" stopColor="#0d9488" />
         </linearGradient>
         <linearGradient id="cpuArea" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.25" />
-          <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.0" />
+          <stop offset="0%" stopColor="#2dd4bf" stopOpacity="0.28" />
+          <stop offset="100%" stopColor="#2dd4bf" stopOpacity="0.0" />
         </linearGradient>
       </defs>
       {/* Area gradient under the line */}
@@ -73,7 +73,7 @@ export default function TopMetricCards({ system, history = [] }) {
         <div>
           <div className="np-kpi-head">
             <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/20">
+              <div className="p-1.5 rounded-lg bg-teal-500/10 text-teal-400 border border-teal-500/20">
                 <Cpu className="w-3.5 h-3.5" />
               </div>
               <span className="font-semibold text-slate-300 uppercase tracking-wider text-xs">
@@ -144,7 +144,7 @@ export default function TopMetricCards({ system, history = [] }) {
                 background:
                   ramPercent > 85
                     ? 'linear-gradient(90deg, #ef4444 0%, #f97316 100%)'
-                    : 'linear-gradient(90deg, #38bdf8 0%, #3b82f6 100%)',
+                    : 'linear-gradient(90deg, #2dd4bf 0%, #0d9488 100%)',
               }}
             />
           </div>
@@ -180,7 +180,7 @@ export default function TopMetricCards({ system, history = [] }) {
             <span className="np-kpi-value text-white">
               {rxKbps}
             </span>
-            <span className="text-xs font-semibold text-sky-400 uppercase">Kbps Rx</span>
+            <span className="text-xs font-semibold text-teal-400 uppercase">Kbps Rx</span>
             <span className="text-slate-600 font-bold mx-1">/</span>
             <span className="np-kpi-value text-white">
               {txKbps}
@@ -192,7 +192,7 @@ export default function TopMetricCards({ system, history = [] }) {
           <div className="mt-5 grid grid-cols-2 gap-2">
             <div className="bg-slate-900/80 rounded-lg p-2 border border-slate-800 flex items-center justify-between">
               <span className="text-[10px] text-slate-400 font-semibold uppercase">Inbound</span>
-              <span className="text-xs font-mono font-bold text-sky-400">{rxKbps} Kbps</span>
+              <span className="text-xs font-mono font-bold text-teal-400">{rxKbps} Kbps</span>
             </div>
             <div className="bg-slate-900/80 rounded-lg p-2 border border-slate-800 flex items-center justify-between">
               <span className="text-[10px] text-slate-400 font-semibold uppercase">Outbound</span>
