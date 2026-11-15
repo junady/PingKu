@@ -83,11 +83,11 @@ export default function App() {
       <aside className="np-sidebar">
         <div>
           {/* Logo Brand Header */}
-          <div className="px-2 pt-2 pb-4 mb-2 border-b border-slate-800/80 flex items-center justify-start min-h-[56px]">
+          <div className="px-1 pt-1 pb-4 mb-3 border-b border-slate-800/80 flex items-center justify-start">
             <img
               src={pingkuLogo}
               alt="PingKu — Server & framework monitoring"
-              className="w-full max-w-[195px] h-auto max-h-12 object-contain select-none block drop-shadow-[0_2px_12px_rgba(20,184,166,0.25)]"
+              className="w-full max-w-[205px] h-auto object-contain select-none block"
             />
           </div>
 
