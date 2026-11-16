@@ -5,61 +5,61 @@
    ========================================================================== */
 
 :root {
-  /* Surface & Background Colors (Dark NOC Theme) */
-  --np-bg-app: #090d16;
-  --np-bg-sidebar: #0d1320;
-  --np-bg-card: #111827;
-  --np-bg-card-top: #151f32;
-  --np-bg-elevated: #1a253b;
-  --np-bg-input: #0b101b;
-  --np-bg-hover: rgba(255, 255, 255, 0.045);
-  --np-bg-active-nav: rgba(20, 184, 166, 0.16);
+  /* Surface & Background Colors (Figma Design Token Match) */
+  --np-bg-app: #0b1015;
+  --np-bg-sidebar: #10171d;
+  --np-bg-card: #111921;
+  --np-bg-card-top: #152028;
+  --np-bg-elevated: #1a2530;
+  --np-bg-input: #10171d;
+  --np-bg-hover: rgba(255, 255, 255, 0.04);
+  --np-bg-active-nav: #17382f;
 
   /* Borders & Specular Highlights */
-  --np-border-subtle: rgba(45, 212, 191, 0.14);
-  --np-border-default: rgba(148, 163, 184, 0.2);
-  --np-border-strong: rgba(148, 163, 184, 0.3);
-  --np-border-active: rgba(45, 212, 191, 0.45);
-  --np-highlight-top: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --np-border-subtle: #1f2c35;
+  --np-border-default: #243139;
+  --np-border-strong: #2e3e48;
+  --np-border-active: #5ce4bd;
+  --np-highlight-top: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 
   /* Typography Colors */
-  --np-text-primary: #f8fafc;
-  --np-text-secondary: #94a3b8;
-  --np-text-muted: #64748b;
+  --np-text-primary: #edf4f5;
+  --np-text-secondary: #91a4ae;
+  --np-text-muted: #657d89;
 
-  /* Brand & Semantic Accents (Obsidian + Teal/Cyan Harmony) */
-  --np-teal: #14b8a6;
-  --np-teal-light: #2dd4bf;
-  --np-teal-hover: #0d9488;
-  --np-teal-soft: #5eead4;
-  --np-teal-glow: rgba(45, 212, 191, 0.25);
-  --np-blue: #14b8a6;
-  --np-blue-hover: #0d9488;
-  --np-blue-soft: #2dd4bf;
-  --np-green: #22c55e;
+  /* Brand & Semantic Accents (Mint / Teal Harmony) */
+  --np-teal: #5ce4bd;
+  --np-teal-light: #5ce4bd;
+  --np-teal-hover: #4cd4ad;
+  --np-teal-soft: #85edd0;
+  --np-teal-glow: rgba(92, 228, 189, 0.25);
+  --np-blue: #5ce4bd;
+  --np-blue-hover: #4cd4ad;
+  --np-blue-soft: #85edd0;
+  --np-green: #5ce4bd;
   --np-emerald: #10b981;
-  --np-red: #ef4444;
-  --np-amber: #f59e0b;
+  --np-red: #f29583;
+  --np-salmon: #f29583;
+  --np-amber: #f0b849;
   --np-orange: #f97316;
   --np-purple: #8b5cf6;
-  --np-cyan: #06b6d4;
+  --np-cyan: #22d3ee;
 
   /* Status Pill Surfaces */
-  --np-green-bg: rgba(16, 185, 129, 0.14);
-  --np-green-border: rgba(16, 185, 129, 0.32);
-  --np-red-bg: rgba(239, 68, 68, 0.14);
-  --np-red-border: rgba(239, 68, 68, 0.32);
-  --np-amber-bg: rgba(245, 158, 11, 0.14);
-  --np-amber-border: rgba(245, 158, 11, 0.32);
+  --np-green-bg: rgba(92, 228, 189, 0.12);
+  --np-green-border: rgba(92, 228, 189, 0.32);
+  --np-red-bg: rgba(242, 149, 131, 0.12);
+  --np-red-border: rgba(242, 149, 131, 0.32);
+  --np-amber-bg: rgba(240, 184, 73, 0.12);
+  --np-amber-border: rgba(240, 184, 73, 0.32);
 
-  /* Light Canvas Tokens (Topology Map) */
-  --np-canvas-bg: #f8fafc;
-  --np-canvas-dot: #cbd5e1;
-  --np-node-bg: #ffffff;
-  --np-node-border: #e2e8f0;
-  --np-node-icon-bg: #f1f5f9;
-  --np-node-text: #0f172a;
-  --np-node-muted: #64748b;
+  /* Dark Canvas Tokens (Topology Map) */
+  --np-canvas-bg: #0e151c;
+  --np-canvas-dot: #1f2d38;
+  --np-node-bg: #152028;
+  --np-node-border: #243139;
+  --np-node-text: #edf4f5;
+  --np-node-muted: #91a4ae;
 
   /* Fonts */
   --np-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -70,19 +70,19 @@
   --np-radius-md: 8px;
   --np-radius-lg: 12px;
   --np-radius-pill: 9999px;
-  --np-shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.25);
-  --np-shadow-card-hover: 0 14px 36px -10px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(45, 212, 191, 0.25);
-  --np-shadow-btn-primary: 0 4px 14px rgba(20, 184, 166, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  --np-shadow-node: 0 6px 18px -4px rgba(15, 23, 42, 0.12), 0 2px 4px rgba(15, 23, 42, 0.06);
-  --np-shadow-focus: 0 0 0 3px rgba(45, 212, 191, 0.28);
+  --np-shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.35);
+  --np-shadow-card-hover: 0 8px 24px -2px rgba(0, 0, 0, 0.45);
+  --np-shadow-btn-primary: 0 2px 10px rgba(92, 228, 189, 0.25);
+  --np-shadow-node: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --np-shadow-focus: 0 0 0 2px rgba(92, 228, 189, 0.3);
 
   /* Motion */
   --np-ease: cubic-bezier(0.16, 1, 0.3, 1);
 
   /* Layout Dimensions */
-  --np-sidebar-width: 244px;
-  --np-drawer-width: 336px;
-  --np-topbar-height: 64px;
+  --np-sidebar-width: 228px;
+  --np-drawer-width: 320px;
+  --np-topbar-height: 72px;
 }
 
 /* ==========================================================================
@@ -140,21 +140,17 @@ body,
   width: 100vw;
   overflow: hidden;
   background-color: var(--np-bg-app);
-  background-image:
-    radial-gradient(ellipse 70% 40% at 60% -10%, rgba(20, 184, 166, 0.1), transparent),
-    radial-gradient(ellipse 40% 30% at 95% 10%, rgba(16, 185, 129, 0.05), transparent);
 }
 
 /* Sidebar */
 .np-sidebar {
   width: var(--np-sidebar-width);
   flex-shrink: 0;
-  background: linear-gradient(180deg, #0e1524 0%, #090e18 100%);
+  background-color: var(--np-bg-sidebar);
   border-right: 1px solid var(--np-border-subtle);
-  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
   display: flex;
   flex-direction: column;
-  padding: 20px 14px;
+  padding: 20px 16px;
   user-select: none;
   z-index: 20;
 }
@@ -163,7 +159,7 @@ body,
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 4px 10px 24px;
+  padding: 4px 6px 18px;
   font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -175,19 +171,18 @@ body,
   width: 32px;
   height: 32px;
   border-radius: var(--np-radius-md);
-  background: linear-gradient(135deg, #14b8a6 0%, #10b981 100%);
-  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  background: var(--np-teal);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #ffffff;
+  color: #0b1015;
   flex-shrink: 0;
 }
 
 .np-nav {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   flex: 1;
 }
 
@@ -195,8 +190,8 @@ body,
   position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
+  gap: 12px;
+  padding: 10px 14px;
   border-radius: var(--np-radius-md);
   color: var(--np-text-secondary);
   font-size: 13px;
@@ -207,32 +202,22 @@ body,
   background: transparent;
   width: 100%;
   text-align: left;
-  transition: all 0.2s var(--np-ease);
+  transition: all 0.18s var(--np-ease);
 }
 
 .np-nav-item:hover {
-  background-color: var(--np-bg-hover);
+  background-color: rgba(255, 255, 255, 0.04);
   color: var(--np-text-primary);
-  transform: translateX(2px);
 }
 
 .np-nav-item.is-active {
-  background: linear-gradient(90deg, rgba(20, 184, 166, 0.18) 0%, rgba(30, 41, 59, 0.55) 100%);
-  color: var(--np-text-primary);
-  border-color: var(--np-border-active);
-  box-shadow: var(--np-highlight-top), 0 4px 12px rgba(0, 0, 0, 0.2);
+  background-color: var(--np-bg-active-nav);
+  color: var(--np-teal);
+  font-weight: 600;
 }
 
-.np-nav-item.is-active::before {
-  content: '';
-  position: absolute;
-  left: -1px;
-  top: 22%;
-  height: 56%;
-  width: 3px;
-  border-radius: 0 3px 3px 0;
-  background: var(--np-teal-light);
-  box-shadow: 0 0 10px var(--np-teal-light);
+.np-nav-item.is-active svg {
+  color: var(--np-teal);
 }
 
 .np-sidebar-footer {
@@ -274,10 +259,9 @@ body,
 /* Top Bar */
 .np-topbar {
   height: var(--np-topbar-height);
-  padding: 0 28px;
+  padding: 0 32px;
   border-bottom: 1px solid var(--np-border-subtle);
-  background: rgba(11, 15, 23, 0.65);
-  backdrop-filter: blur(10px);
+  background-color: var(--np-bg-app);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -414,11 +398,11 @@ body,
    2. Cards, Typography & Common Controls (Layered Depth)
    ========================================================================== */
 .np-card {
-  background: linear-gradient(180deg, var(--np-bg-card-top) 0%, var(--np-bg-card) 100%);
+  background-color: var(--np-bg-card);
   border: 1px solid var(--np-border-subtle);
   border-radius: var(--np-radius-lg);
   padding: 20px 22px;
-  box-shadow: var(--np-highlight-top), var(--np-shadow-card);
+  box-shadow: var(--np-shadow-card);
   transition: transform 0.22s var(--np-ease), border-color 0.22s var(--np-ease), box-shadow 0.22s var(--np-ease);
 }
 
@@ -504,28 +488,29 @@ body,
 }
 
 .np-btn--primary {
-  background: linear-gradient(180deg, #14b8a6 0%, #0d9488 100%);
-  border-color: rgba(45, 212, 191, 0.45);
-  box-shadow: var(--np-shadow-btn-primary);
-  color: #ffffff;
+  background-color: var(--np-teal);
+  color: #0b1015;
+  font-weight: 600;
+  border-radius: var(--np-radius-md);
+  box-shadow: 0 2px 10px rgba(92, 228, 189, 0.25);
+  border: none;
 }
 
 .np-btn--primary:hover {
-  background: linear-gradient(180deg, #2dd4bf 0%, #0f766e 100%);
-  box-shadow: 0 6px 18px rgba(20, 184, 166, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  background-color: var(--np-teal-hover);
+  color: #0b1015;
   transform: translateY(-1px);
 }
 
 .np-btn--secondary {
-  background: linear-gradient(180deg, #1e293b 0%, #162032 100%);
-  border-color: var(--np-border-strong);
-  box-shadow: var(--np-highlight-top), 0 2px 6px rgba(0, 0, 0, 0.25);
+  background-color: #172127;
+  border: 1px solid var(--np-border-default);
   color: var(--np-text-primary);
 }
 
 .np-btn--secondary:hover {
-  background: linear-gradient(180deg, #27354d 0%, #1c283e 100%);
-  border-color: rgba(148, 163, 184, 0.45);
+  background-color: #1f2c35;
+  border-color: var(--np-border-strong);
 }
 
 .np-btn--danger-outline {

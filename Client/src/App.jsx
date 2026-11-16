@@ -1,22 +1,27 @@
 import React, { useState } from 'react';
 import {
-  Activity,
   LayoutDashboard,
   Share2,
   Wrench,
   FileText,
   Settings as SettingsIcon,
   Search,
-  MessageSquare,
   Bell,
+  Layers,
+  ChevronDown,
+  RotateCw,
+  ExternalLink,
 } from 'lucide-react';
 import pingkuLogo from './assets/pingku-logo.png';
 import { useTelemetry } from './hooks/useTelemetry';
 import TopMetricCards from './components/TopMetricCards';
+import SystemPerformanceChart from './components/SystemPerformanceChart';
+import RecentAlertsCard from './components/RecentAlertsCard';
 import ServiceHostStatus from './components/ServiceHostStatus';
-import AlertLogPanel from './components/AlertLogPanel';
 import TopologyMap from './components/TopologyMap';
 import NetworkToolsHub from './components/NetworkToolsHub';
+import ConnectionLogsView from './components/ConnectionLogsView';
+import SettingsView from './components/SettingsView';
 
 export default function App() {
   const {
@@ -39,36 +44,42 @@ export default function App() {
     {
       id: 'overview',
       label: '1. Overview',
+      code: '01',
       title: 'Overview',
-      subtitle: 'Real-time system, server, and network diagnostics.',
+      subtitle: 'Diagnostik real-time sistem, server, dan jaringan.',
       icon: LayoutDashboard,
     },
     {
       id: 'topology',
       label: '2. Topology Map',
-      title: 'Interactive Topology Map',
-      subtitle: 'Geser posisi perangkat dan klik pada node untuk melihat detail IP, port, dan pengujian koneksi',
+      code: '02',
+      title: 'Topology Map',
+      subtitle: 'Geser posisi node, pantau status link, dan inspeksi perangkat.',
       icon: Share2,
     },
     {
       id: 'tools',
       label: '3. Network Tools',
+      code: '03',
       title: 'Network Tools',
-      subtitle: 'Alat diagnostik live ICMP ping, TCP port scanner, DNS checker, dan kalkulator VLSM subnetting.',
+      subtitle: 'Semua alat diagnostik jaringan, dalam satu tempat.',
       icon: Wrench,
     },
     {
       id: 'logs',
       label: '4. Connection Logs',
+      code: '04',
       title: 'Connection Logs',
-      subtitle: 'Riwayat kejadian perubahan status node dan peringatan ambang batas server.',
+      subtitle: 'Setiap perubahan dan peringatan, tercatat jelas.',
       icon: FileText,
+      badge: logs && logs.length > 0 ? logs.length : 50,
     },
     {
       id: 'settings',
       label: '5. Settings',
+      code: '05',
       title: 'Settings',
-      subtitle: 'Konfigurasi parameter telemetri, backend port, dan opsi server Debian.',
+      subtitle: 'Atur koneksi backend dan preferensi telemetri.',
       icon: SettingsIcon,
     },
   ];
@@ -76,134 +87,222 @@ export default function App() {
   const currentMenu = menuItems.find((item) => item.id === activeTab) || menuItems[0];
 
   return (
-    <div className="np-app">
-      {/* ==========================================
-          SIDEBAR KIRI (PingKu NOC)
-      ========================================== */}
-      <aside className="np-sidebar">
-        <div>
-          {/* Logo Brand Header */}
-          <div className="px-1 pt-1 pb-4 mb-3 border-b border-slate-800/80 flex items-center justify-start">
+    <div className="flex min-h-screen bg-[#0b1015] text-[#edf4f5] font-sans antialiased selection:bg-[#5ce4bd]/30 selection:text-[#edf4f5]">
+      {/* =========================================================================
+          SIDEBAR KIRI (Figma Design Token Match: #10171d, 228px)
+          ========================================================================= */}
+      <aside className="w-[228px] bg-[#10171d] border-r border-[#1f2c35] flex flex-col justify-between shrink-0 select-none z-20">
+        <div className="p-4">
+          {/* Brand Logo Header — Mempertahankan logo asli transparan pingku-logo.png */}
+          <div className="pt-2 pb-5 mb-3 flex items-center justify-start border-b border-[#1b262e]">
             <img
               src={pingkuLogo}
               alt="PingKu — Server & framework monitoring"
-              className="w-full max-w-[205px] h-auto object-contain select-none block"
+              className="w-full max-w-[185px] h-auto object-contain select-none block"
             />
           </div>
 
-          {/* Navigasi Utama */}
-          <nav className="np-nav">
+          {/* Workspace Selector Card */}
+          <div className="bg-[#152028] border border-[#243139] hover:border-[#2e3e48] rounded-[8px] p-2.5 mb-4 flex items-center justify-between cursor-pointer transition-colors">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-6 h-6 rounded-[5px] bg-[#1a2530] border border-[#2e3e48] flex items-center justify-center text-[#5ce4bd] shrink-0">
+                <Layers className="w-3.5 h-3.5" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[12px] font-semibold text-[#edf4f5] leading-tight truncate">
+                  Local workspace
+                </div>
+                <div className="text-[10px] text-[#91a4ae] truncate">
+                  Debian 12 · Production
+                </div>
+              </div>
+            </div>
+            <ChevronDown className="w-3.5 h-3.5 text-[#657d89] shrink-0 ml-1" />
+          </div>
+
+          {/* Navigasi Utama (5 Tabs) */}
+          <nav className="space-y-1">
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
               return (
                 <button
                   key={item.id}
+                  type="button"
                   onClick={() => setActiveTab(item.id)}
-                  className={`np-nav-item ${isActive ? 'is-active' : ''}`}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-[8px] text-[13px] font-medium transition-all ${
+                    isActive
+                      ? 'bg-[#17382f] text-[#5ce4bd] font-semibold'
+                      : 'text-[#91a4ae] hover:text-[#edf4f5] hover:bg-[#152028]'
+                  }`}
                 >
-                  <Icon className="w-4 h-4 shrink-0" />
-                  <span>{item.label}</span>
+                  <div className="flex items-center gap-2.5">
+                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#5ce4bd]' : 'text-[#91a4ae]'}`} />
+                    <span>{item.label}</span>
+                  </div>
+
+                  {item.badge && (
+                    <span
+                      className={`text-[10px] font-mono px-1.5 py-0.5 rounded-[4px] font-semibold ${
+                        isActive
+                          ? 'bg-[#214f3f] text-[#5ce4bd]'
+                          : 'bg-[#172127] text-[#91a4ae] border border-[#243139]'
+                      }`}
+                    >
+                      {item.badge}
+                    </span>
+                  )}
                 </button>
               );
             })}
           </nav>
         </div>
 
-        {/* Status Koneksi Host di Bagian Bawah Sidebar */}
-        <div className="np-sidebar-footer">
-          <div className={`np-connection-pill ${!isConnected ? 'np-connection-pill--offline' : ''}`}>
+        {/* Sidebar Footer & Status Koneksi Host */}
+        <div className="p-4 border-t border-[#1b262e] space-y-3">
+          <div
+            className={`flex items-center justify-between px-3 py-2 rounded-[8px] border text-[11px] font-medium transition-colors ${
+              isConnected
+                ? 'bg-[#163229] border-[#214f3f] text-[#5ce4bd]'
+                : 'bg-[#34231f] border-[#4d2d25] text-[#f29583]'
+            }`}
+          >
             <span className="truncate">
               {isConnected ? 'Debian 12: Connected' : 'Server: Offline (8080)'}
             </span>
-            <span className={`np-dot ${isConnected ? 'np-dot--up' : 'np-dot--down'}`} />
+            <span
+              className={`w-2 h-2 rounded-full shrink-0 ${
+                isConnected ? 'bg-[#5ce4bd] animate-pulse' : 'bg-[#f29583]'
+              }`}
+            />
+          </div>
+
+          <div className="flex items-center justify-between text-[10px] text-[#657d89] px-1">
+            <span>PingKu NOC v1.2</span>
+            <span className="hover:text-[#91a4ae] cursor-pointer">Docs & API</span>
           </div>
         </div>
       </aside>
 
-      {/* ==========================================
-          AREA KANAN: HEADER + KONTEN UTAMA
-      ========================================== */}
-      <div className="np-main">
-        {/* Header Atas */}
-        <header className="np-topbar">
-          <div>
-            {activeTab === 'tools' ? (
-              <div>
-                <h1 className="np-topbar-title text-white">
-                  Network Tools
-                </h1>
-                <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-0.5">
-                  <span className="text-teal-400 font-medium">Home</span>
-                  <span>/</span>
-                  <span>Network Tools</span>
-                </div>
-              </div>
-            ) : (
-              <div>
-                <h1 className="np-topbar-title text-white">
-                  {currentMenu.title}
-                </h1>
-                <p className="text-xs text-slate-400 mt-0.5">{currentMenu.subtitle}</p>
-              </div>
-            )}
+      {/* =========================================================================
+          AREA KANAN: TOPBAR + MAIN VIEW CONTAINER
+          ========================================================================= */}
+      <div className="flex-1 flex flex-col min-w-0 bg-[#0b1015]">
+        {/* Topbar Header Sesuai Desain Figma (Height 72px) */}
+        <header className="h-[72px] bg-[#0b1015] border-b border-[#1f2c35] px-8 flex items-center justify-between shrink-0 sticky top-0 z-10">
+          {/* Breadcrumb Kiri */}
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-[#91a4ae]">Workspace</span>
+            <span className="text-[#657d89]">/</span>
+            <span className="text-[#edf4f5] font-medium">{currentMenu.title}</span>
           </div>
 
           {/* Action Header Kanan */}
-          <div className="np-topbar-actions">
-            {/* Search Input */}
-            <div className="np-search-box hidden md:block">
-              <Search className="w-4 h-4 np-search-icon" />
+          <div className="flex items-center gap-3">
+            {/* Search Input Box dengan Keyboard Shortcut Badge */}
+            <div className="relative hidden md:flex items-center bg-[#152028] border border-[#243139] hover:border-[#2e3e48] rounded-[8px] px-3 py-1.5 w-64 text-xs text-[#edf4f5] transition-colors">
+              <Search className="w-3.5 h-3.5 text-[#91a4ae] mr-2 shrink-0" />
               <input
                 type="text"
-                placeholder="Search metrics, hosts..."
+                placeholder="Cari host, IP, atau event..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="np-input text-xs"
+                className="bg-transparent border-none outline-none text-[#edf4f5] placeholder-[#657d89] w-full text-xs"
               />
+              <kbd className="text-[10px] font-mono bg-[#1a2530] text-[#91a4ae] px-1.5 py-0.5 rounded border border-[#2e3e48] shrink-0 ml-1">
+                ⌘ K
+              </kbd>
             </div>
 
             {/* Live Telemetry Indicator Badge */}
-            <div className="np-pill np-pill--up text-xs font-semibold">
-              <span className="np-dot np-dot--up" />
-              <span>Live Telemetry</span>
+            <div className="flex items-center gap-1.5 bg-[#163229] border border-[#214f3f] text-[#5ce4bd] text-xs font-semibold px-3 py-1.5 rounded-[8px] shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-[#5ce4bd] animate-pulse" />
+              <span>Live telemetry</span>
             </div>
 
-            {/* User & Notifications */}
-            <div className="flex items-center gap-1.5 text-slate-400 pl-2 border-l border-slate-800">
-              <button className="np-icon-btn" title="Pesan">
-                <MessageSquare className="w-4 h-4" />
-              </button>
-              <button className="np-icon-btn" title="Notifikasi">
-                <Bell className="w-4 h-4" />
-                <span className="np-badge-dot" />
-              </button>
-              {/* User Avatar */}
-              <div className="np-avatar ml-1">
-                JR
+            {/* Notification Bell Button */}
+            <button
+              type="button"
+              className="relative w-8 h-8 rounded-[8px] bg-[#152028] border border-[#243139] hover:bg-[#1a2530] flex items-center justify-center text-[#91a4ae] hover:text-[#edf4f5] transition-colors"
+              title="Notifikasi"
+            >
+              <Bell className="w-4 h-4" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#5ce4bd]" />
+            </button>
+
+            {/* User Profile / Admin Dropdown */}
+            <div className="flex items-center gap-2.5 pl-2 border-l border-[#1f2c35]">
+              <div className="w-8 h-8 rounded-full bg-[#17382f] border border-[#214f3f] text-[#5ce4bd] text-xs font-bold flex items-center justify-center shadow-sm">
+                AD
+              </div>
+              <div className="hidden lg:block text-left">
+                <div className="text-xs font-medium text-[#edf4f5] leading-none">Admin</div>
+                <div className="text-[10px] text-[#91a4ae] mt-0.5 leading-none">admin@pingku.local</div>
               </div>
             </div>
           </div>
         </header>
 
-        {/* Konten Tab Aktif */}
-        <main
-          className={`np-content ${
-            activeTab === 'topology' ? 'p-6 flex flex-col' : 'p-8'
-          }`}
-        >
+        {/* Konten Halaman Aktif */}
+        <main className={`flex-1 ${activeTab === 'topology' ? 'p-6 flex flex-col' : 'p-8'}`}>
           {/* TAB 1: OVERVIEW */}
           {activeTab === 'overview' && (
             <div className="space-y-6 max-w-7xl mx-auto w-full">
+              {/* Header Overview Sesuai Desain Figma */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-[#5ce4bd] uppercase tracking-wider block">
+                    MONITORING / 01
+                  </span>
+                  <h1 className="text-[28px] font-bold text-[#edf4f5] tracking-tight mt-0.5">
+                    Overview
+                  </h1>
+                  <p className="text-[13px] text-[#91a4ae] mt-0.5">
+                    Diagnostik real-time sistem, server, dan jaringan.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => window.location.reload()}
+                  className="bg-[#152028] border border-[#243139] hover:bg-[#1a2530] text-[#edf4f5] text-xs px-3.5 py-2 rounded-[8px] flex items-center gap-1.5 shadow-sm transition"
+                >
+                  <RotateCw className="w-3.5 h-3.5 text-[#91a4ae]" />
+                  <span>Refresh</span>
+                </button>
+              </div>
+
+              {/* Row 1: 3 KPI Cards (CPU, RAM, Network I/O) */}
               <TopMetricCards system={system} history={history} />
+
+              {/* Row 2: Performance Chart (2/3) + Recent Alerts (1/3) */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+                <div className="lg:col-span-2">
+                  <SystemPerformanceChart history={history} />
+                </div>
+                <div className="lg:col-span-1">
+                  <RecentAlertsCard logs={logs} />
+                </div>
+              </div>
+
+              {/* Row 3: Service & Host Status (Uptime bars 32-tick) */}
               <ServiceHostStatus nodes={nodes} />
-              <AlertLogPanel logs={logs} />
+
+              {/* Bottom Footer Info */}
+              <div className="flex flex-col sm:flex-row items-center justify-between py-4 border-t border-[#1b262e] text-[11px] text-[#657d89] mt-8 gap-2">
+                <div>
+                  <span className="font-semibold text-[#91a4ae]">PINGKU / LOCAL WORKSPACE</span> · Debian 12 (x86_64) · Node.js v20.x
+                </div>
+                <div>
+                  Terakhir diperbarui: {new Date().toLocaleTimeString()} · WebSocket 2s interval
+                </div>
+              </div>
             </div>
           )}
 
           {/* TAB 2: TOPOLOGY MAP */}
           {activeTab === 'topology' && (
-            <div className="flex-1 w-full min-h-[620px] flex">
+            <div className="flex-1 w-full min-h-[660px] flex">
               <TopologyMap
                 nodes={nodes}
                 onAddNode={addNode}
@@ -215,63 +314,14 @@ export default function App() {
             </div>
           )}
 
-          {/* TAB 3: NETWORK TOOLS SUITE (100% REAL-TIME) */}
+          {/* TAB 3: NETWORK TOOLS SUITE */}
           {activeTab === 'tools' && <NetworkToolsHub />}
 
           {/* TAB 4: CONNECTION LOGS */}
-          {activeTab === 'logs' && (
-            <div className="max-w-7xl mx-auto space-y-6">
-              <AlertLogPanel logs={logs} />
-            </div>
-          )}
+          {activeTab === 'logs' && <ConnectionLogsView logs={logs} />}
 
           {/* TAB 5: SETTINGS */}
-          {activeTab === 'settings' && (
-            <div className="max-w-3xl mx-auto bg-gradient-to-b from-[#131927] to-[#0e1320] border border-slate-800 rounded-2xl p-6 shadow-xl">
-              <h2 className="text-base font-bold text-white mb-2">
-                Pengaturan Sistem & Telemetri
-              </h2>
-              <p className="text-xs text-slate-400 mb-6">
-                Konfigurasi integrasi backend Node.js dan parameter probe ICMP/TCP.
-              </p>
-
-              <div className="space-y-4 text-xs">
-                <div className="flex justify-between items-center py-3 border-b border-slate-800/80">
-                  <div>
-                    <span className="font-semibold text-slate-200 block">Backend Server</span>
-                    <span className="text-slate-400 font-mono text-[11px]">http://localhost:8080</span>
-                  </div>
-                  <span
-                    className={`px-2.5 py-1 rounded-lg border font-semibold shadow-sm ${
-                      isConnected
-                        ? 'bg-emerald-950/40 text-emerald-400 border-emerald-900/60'
-                        : 'bg-rose-950/40 text-rose-400 border-rose-900/60'
-                    }`}
-                  >
-                    {isConnected ? 'ONLINE' : 'OFFLINE'}
-                  </span>
-                </div>
-
-                <div className="flex justify-between items-center py-3 border-b border-slate-800/80">
-                  <div>
-                    <span className="font-semibold text-slate-200 block">WebSocket Stream</span>
-                    <span className="text-slate-400 font-mono text-[11px]">ws://localhost:8080/ws</span>
-                  </div>
-                  <span className="px-2.5 py-1 rounded-lg bg-emerald-950/40 text-emerald-400 border border-emerald-900/60 font-semibold shadow-sm">
-                    INTERVAL 2s
-                  </span>
-                </div>
-
-                <div className="flex justify-between items-center py-3 border-b border-slate-800/80">
-                  <div>
-                    <span className="font-semibold text-slate-200 block">DNS Resolver Default</span>
-                    <span className="text-slate-400 text-[11px]">Public DNS over HTTPS & BIND9 (192.168.10.1)</span>
-                  </div>
-                  <span className="text-slate-300 font-mono">PORT 53</span>
-                </div>
-              </div>
-            </div>
-          )}
+          {activeTab === 'settings' && <SettingsView isConnected={isConnected} />}
         </main>
       </div>
     </div>

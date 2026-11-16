@@ -1,52 +1,38 @@
 import React from 'react';
-import { ArrowLeftRight, Cpu, HardDrive } from 'lucide-react';
 
-function CpuAreaSparkline({ history }) {
-  const width = 260;
-  const height = 40;
+function CpuSparkline({ history = [] }) {
+  const width = 140;
+  const height = 34;
 
   const values = history.length > 0
     ? history.map((item) => item.cpu_percent || 0)
-    : [14, 16, 13, 19, 15, 14];
+    : [14, 18, 15, 22, 19, 25, 21, 28, 24, 20];
 
-  const pointsData = values.length === 1 ? [values[0], values[0]] : values;
+  const pointsData = values.length === 1 ? [values[0], values[0]] : values.slice(-12);
 
-  // Koordinat polyline garis
   const coords = pointsData.map((val, idx) => {
     const x = (idx / (pointsData.length - 1)) * width;
     const clamped = Math.min(100, Math.max(0, val));
-    const y = height - (clamped / 100) * (height - 8) - 4;
+    const y = height - (clamped / 100) * (height - 6) - 3;
     return { x, y };
   });
 
   const linePoints = coords.map((c) => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' ');
-
-  // Path area penutup di bawah garis (Beszel style chart area)
   const areaPath = `M 0,${height} L ${coords.map((c) => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' L ')} L ${width},${height} Z`;
 
   return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      className="w-full h-10 overflow-visible mt-2"
-      preserveAspectRatio="none"
-    >
+    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible">
       <defs>
-        <linearGradient id="cpuStroke" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#2dd4bf" />
-          <stop offset="100%" stopColor="#0d9488" />
-        </linearGradient>
-        <linearGradient id="cpuArea" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#2dd4bf" stopOpacity="0.28" />
-          <stop offset="100%" stopColor="#2dd4bf" stopOpacity="0.0" />
+        <linearGradient id="cpuSparkFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#5ce4bd" stopOpacity="0.25" />
+          <stop offset="100%" stopColor="#5ce4bd" stopOpacity="0.0" />
         </linearGradient>
       </defs>
-      {/* Area gradient under the line */}
-      <path d={areaPath} fill="url(#cpuArea)" />
-      {/* Stroke line */}
+      <path d={areaPath} fill="url(#cpuSparkFill)" />
       <polyline
         fill="none"
-        stroke="url(#cpuStroke)"
-        strokeWidth="2.2"
+        stroke="#5ce4bd"
+        strokeWidth="1.8"
         strokeLinecap="round"
         strokeLinejoin="round"
         points={linePoints}
@@ -55,155 +41,124 @@ function CpuAreaSparkline({ history }) {
   );
 }
 
+function NetWaveSparkline() {
+  return (
+    <svg viewBox="0 0 80 24" className="w-full h-full overflow-visible opacity-75">
+      <path
+        d="M 2 16 Q 16 6 28 14 T 54 10 T 78 12"
+        fill="none"
+        stroke="#5ce4bd"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 export default function TopMetricCards({ system, history = [] }) {
-  const ramUsedMb = system?.ram_used_mb ?? 512;
-  const ramTotalMb = system?.ram_total_mb ?? 2048;
+  const cpuPercent = Math.round(system?.cpu_percent ?? 64);
+  const diskPercent = system?.disk_percent ?? 87.9;
+
+  const ramUsedMb = system?.ram_used_mb ?? 7084;
+  const ramTotalMb = system?.ram_total_mb ?? 7884;
   const ramTotalGb = (ramTotalMb / 1024).toFixed(1);
   const ramPercent = Math.min(100, Math.round((ramUsedMb / ramTotalMb) * 100));
+  const ramAvailableMb = Math.max(0, ramTotalMb - ramUsedMb);
 
-  const rxKbps = Math.round(system?.net_rx_kbps ?? 124);
-  const txKbps = Math.round(system?.net_tx_kbps ?? 48);
+  const rxKbps = Math.round(system?.net_rx_kbps ?? 7);
+  const txKbps = Math.round(system?.net_tx_kbps ?? 2);
 
   return (
-    <div className="np-kpi-grid">
-      {/* ==========================================
-          1. CPU USAGE (Beszel-Style Depth & Gradient)
-      ========================================== */}
-      <div className="np-card np-kpi-card">
-        <div>
-          <div className="np-kpi-head">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-teal-500/10 text-teal-400 border border-teal-500/20">
-                <Cpu className="w-3.5 h-3.5" />
-              </div>
-              <span className="font-semibold text-slate-300 uppercase tracking-wider text-xs">
-                CPU Usage
-              </span>
-            </div>
-            <span className="text-[11px] font-mono text-slate-400 bg-slate-900/80 px-2 py-0.5 rounded border border-slate-800">
-              Disk: {system?.disk_percent ?? 32}%
-            </span>
-          </div>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      {/* 1. CPU USAGE */}
+      <div className="bg-[#111921] border border-[#1f2c35] rounded-[12px] p-5 flex flex-col justify-between h-[155px] shadow-sm hover:border-[#2e3e48] transition-colors">
+        <div className="flex items-center justify-between">
+          <span className="text-[13px] font-medium text-[#91a4ae]">CPU usage</span>
+          <span className={`text-[11px] font-medium ${cpuPercent > 80 ? 'text-[#f0b849]' : 'text-[#5ce4bd]'}`}>
+            {cpuPercent > 80 ? 'Tinggi' : 'Normal'}
+          </span>
+        </div>
 
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="np-kpi-value text-white">
-              {Math.round(system?.cpu_percent ?? 14)}%
+        <div className="flex items-center justify-between my-auto">
+          <div className="flex items-baseline">
+            <span className="text-[40px] font-bold text-[#edf4f5] tracking-tight leading-none">
+              {cpuPercent}
             </span>
-            <span className="np-kpi-unit">load</span>
+            <span className="text-[16px] text-[#91a4ae] ml-1 font-normal">%</span>
           </div>
-
-          {/* Sparkline Area Chart */}
-          <div className="np-sparkline">
-            <CpuAreaSparkline history={history} />
+          <div className="w-[140px] h-[34px]">
+            <CpuSparkline history={history} />
           </div>
         </div>
 
-        <div className="flex items-center justify-between text-xs text-slate-400 mt-4 pt-3 border-t border-slate-800/80">
-          <span>Intel Xeon • 4 Cores</span>
-          <span className="text-emerald-400 font-medium flex items-center gap-1.5">
-            <span className="np-dot np-dot--up" />
-            Normal
-          </span>
+        <div className="flex items-center justify-between text-[11px] text-[#91a4ae] pt-2 border-t border-[#1b262e]">
+          <span>Intel Xeon · 4 cores</span>
+          <span className="font-mono">Disk {diskPercent}%</span>
         </div>
       </div>
 
-      {/* ==========================================
-          2. RAM USAGE (Beszel-Style Depth & Bar)
-      ========================================== */}
-      <div className="np-card np-kpi-card">
-        <div>
-          <div className="np-kpi-head">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                <HardDrive className="w-3.5 h-3.5" />
-              </div>
-              <span className="font-semibold text-slate-300 uppercase tracking-wider text-xs">
-                RAM Usage
-              </span>
-            </div>
-            <span className="text-[11px] font-mono text-slate-400 bg-slate-900/80 px-2 py-0.5 rounded border border-slate-800">
-              {ramPercent}%
-            </span>
-          </div>
+      {/* 2. RAM USAGE */}
+      <div className="bg-[#111921] border border-[#1f2c35] rounded-[12px] p-5 flex flex-col justify-between h-[155px] shadow-sm hover:border-[#2e3e48] transition-colors">
+        <div className="flex items-center justify-between">
+          <span className="text-[13px] font-medium text-[#91a4ae]">RAM usage</span>
+          <span className={`text-[11px] font-medium font-mono ${ramPercent > 85 ? 'text-[#f0b849]' : 'text-[#5ce4bd]'}`}>
+            {ramPercent}%
+          </span>
+        </div>
 
-          <div className="mt-3 flex items-baseline gap-1.5 flex-wrap">
-            <span className="np-kpi-value text-white">
-              {ramUsedMb} MB
+        <div className="my-auto">
+          <div className="flex items-baseline">
+            <span className="text-[40px] font-bold text-[#edf4f5] tracking-tight leading-none">
+              {ramUsedMb}
             </span>
-            <span className="np-kpi-unit">
-              / {ramTotalGb} GB
-            </span>
+            <span className="text-[16px] text-[#91a4ae] ml-1.5 font-normal">MB</span>
           </div>
-
-          {/* Progress Bar with Enhanced Depth Fill */}
-          <div className="np-progress-track">
+          <div className="w-full h-1 bg-[#1b262e] rounded-full overflow-hidden mt-3">
             <div
-              className="np-progress-fill"
-              style={{
-                width: `${ramPercent}%`,
-                background:
-                  ramPercent > 85
-                    ? 'linear-gradient(90deg, #ef4444 0%, #f97316 100%)'
-                    : 'linear-gradient(90deg, #2dd4bf 0%, #0d9488 100%)',
-              }}
+              className={`h-full rounded-full transition-all duration-500 ${
+                ramPercent > 85 ? 'bg-[#f0b849]' : 'bg-[#5ce4bd]'
+              }`}
+              style={{ width: `${ramPercent}%` }}
             />
           </div>
         </div>
 
-        <div className="flex items-center justify-between text-xs text-slate-400 mt-4 pt-3 border-t border-slate-800/80">
-          <span>Shared memory and buffers</span>
-          <span className="text-slate-500 font-mono text-[11px]">Free: {ramTotalMb - ramUsedMb} MB</span>
+        <div className="flex items-center justify-between text-[11px] text-[#91a4ae] pt-2 border-t border-[#1b262e]">
+          <span>{ramTotalGb} GB total · {ramAvailableMb} MB tersedia</span>
         </div>
       </div>
 
-      {/* ==========================================
-          3. NETWORK I/O (Beszel-Style Traffic Card)
-      ========================================== */}
-      <div className="np-card np-kpi-card">
-        <div>
-          <div className="np-kpi-head">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                <ArrowLeftRight className="w-3.5 h-3.5" />
-              </div>
-              <span className="font-semibold text-slate-300 uppercase tracking-wider text-xs">
-                Network I/O
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="np-dot np-dot--up" />
-              <span className="text-[11px] font-mono text-emerald-400 font-medium">Live</span>
-            </div>
-          </div>
-
-          <div className="mt-3 flex items-baseline gap-2 flex-wrap">
-            <span className="np-kpi-value text-white">
-              {rxKbps}
-            </span>
-            <span className="text-xs font-semibold text-teal-400 uppercase">Kbps Rx</span>
-            <span className="text-slate-600 font-bold mx-1">/</span>
-            <span className="np-kpi-value text-white">
-              {txKbps}
-            </span>
-            <span className="text-xs font-semibold text-emerald-400 uppercase">Kbps Tx</span>
-          </div>
-
-          {/* Visual Dual Rate Indicator Bar */}
-          <div className="mt-5 grid grid-cols-2 gap-2">
-            <div className="bg-slate-900/80 rounded-lg p-2 border border-slate-800 flex items-center justify-between">
-              <span className="text-[10px] text-slate-400 font-semibold uppercase">Inbound</span>
-              <span className="text-xs font-mono font-bold text-teal-400">{rxKbps} Kbps</span>
-            </div>
-            <div className="bg-slate-900/80 rounded-lg p-2 border border-slate-800 flex items-center justify-between">
-              <span className="text-[10px] text-slate-400 font-semibold uppercase">Outbound</span>
-              <span className="text-xs font-mono font-bold text-emerald-400">{txKbps} Kbps</span>
-            </div>
+      {/* 3. NETWORK I/O */}
+      <div className="bg-[#111921] border border-[#1f2c35] rounded-[12px] p-5 flex flex-col justify-between h-[155px] shadow-sm hover:border-[#2e3e48] transition-colors">
+        <div className="flex items-center justify-between">
+          <span className="text-[13px] font-medium text-[#91a4ae]">Network I/O</span>
+          <div className="flex items-center gap-1.5 text-[11px] font-medium text-[#5ce4bd]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#5ce4bd] animate-pulse" />
+            <span>Live</span>
           </div>
         </div>
 
-        <div className="flex items-center justify-between text-xs text-slate-400 mt-4 pt-3 border-t border-slate-800/80">
-          <span>Real-time traffic on eth0</span>
-          <span className="text-slate-500 font-mono text-[11px]">Duplex: Full</span>
+        <div className="flex items-center justify-between my-auto">
+          <div className="flex items-baseline">
+            <span className="text-[36px] font-bold text-[#edf4f5] tracking-tight leading-none">
+              {rxKbps}
+            </span>
+            <span className="text-[12px] text-[#91a4ae] ml-1 uppercase font-medium">Kbps RX</span>
+          </div>
+          <div className="w-[80px] h-[24px]">
+            <NetWaveSparkline />
+          </div>
+          <div className="flex items-baseline text-right">
+            <span className="text-[20px] text-[#91a4ae] mr-0.5 font-bold">↓</span>
+            <span className="text-[28px] font-bold text-[#edf4f5] tracking-tight leading-none">
+              {txKbps}
+            </span>
+            <span className="text-[12px] text-[#91a4ae] ml-1 uppercase font-medium">Kbps TX</span>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between text-[11px] text-[#91a4ae] pt-2 border-t border-[#1b262e]">
+          <span>eth0 · Full duplex</span>
         </div>
       </div>
     </div>

@@ -20,18 +20,20 @@ import {
   Edit2,
   Trash2,
   RefreshCw,
-  Layers,
+  ExternalLink,
+  Activity,
+  AlertTriangle,
 } from 'lucide-react';
 
 // ==========================================
-// 1. CUSTOM NODE (Sesuai Desain Mockup + Kedalaman Visual)
+// 1. CUSTOM NODE (Sesuai Desain Figma Dark NOC)
 // ==========================================
 const DeviceNode = ({ data, selected }) => {
   const isDown = data.status === 'DOWN';
 
   const renderIcon = () => {
-    const iconClass = 'w-5 h-5 text-slate-700';
-    switch (data.type) {
+    const iconClass = 'w-4 h-4 text-[#91a4ae]';
+    switch (data.type?.toLowerCase()) {
       case 'router':
         return <RouterIcon className={iconClass} />;
       case 'switch':
@@ -46,48 +48,52 @@ const DeviceNode = ({ data, selected }) => {
 
   return (
     <div
-      className={`np-topo-node ${selected ? 'is-selected' : ''} ${isDown ? 'is-down animate-pulse' : ''}`}
+      className={`bg-[#152028] border rounded-[10px] p-3.5 min-w-[200px] shadow-lg cursor-pointer transition-all duration-200 ${
+        selected
+          ? 'border-[#5ce4bd] ring-2 ring-[#5ce4bd]/20 shadow-[0_0_15px_rgba(92,228,189,0.15)]'
+          : isDown
+          ? 'border-[#f29583] shadow-[0_0_12px_rgba(242,149,131,0.15)]'
+          : 'border-[#243139] hover:border-[#2e3e48]'
+      }`}
     >
-      {/* Handle Target (Kiri) */}
       <Handle
         type="target"
         position={Position.Left}
-        className="!w-2.5 !h-2.5 !bg-slate-400 !border-2 !border-white !opacity-80"
+        className="!w-2 !h-2 !bg-[#657d89] !border-none"
       />
 
-      {/* Kotak Ikon Master Stylesheet */}
-      <div className="np-topo-node-icon">
-        {renderIcon()}
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-[6px] bg-[#1a2530] border border-[#243139] flex items-center justify-center shrink-0">
+          {renderIcon()}
+        </div>
+
+        <div className="min-w-0 flex-1 text-left">
+          <div className="text-[13px] font-semibold text-[#edf4f5] truncate leading-tight">
+            {data.label}
+          </div>
+          <div className="text-[10px] font-mono text-[#91a4ae] mt-0.5 truncate">
+            {data.ip_address}
+          </div>
+          <div className="mt-1 flex items-center gap-1.5">
+            {isDown ? (
+              <span className="text-[9px] font-bold text-[#f29583] flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#f29583] animate-pulse" />
+                DOWN
+              </span>
+            ) : (
+              <span className="text-[9px] font-bold text-[#5ce4bd] flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#5ce4bd]" />
+                ONLINE
+              </span>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Label & Status */}
-      <div className="flex flex-col text-left">
-        <span className="np-topo-node-title">
-          {data.label}
-        </span>
-
-        {isDown ? (
-          <div className="np-topo-node-status np-topo-node-status--down">
-            <span className="np-dot np-dot--down animate-ping" />
-            <span>DOWN</span>
-          </div>
-        ) : (
-          <div className="np-topo-node-status np-topo-node-status--up">
-            <span className="np-dot np-dot--up" />
-            <span>
-              {data.latency_ms !== null && data.latency_ms !== undefined
-                ? `${data.latency_ms}ms`
-                : 'Active (0ms)'}
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Handle Source (Kanan) */}
       <Handle
         type="source"
         position={Position.Right}
-        className="!w-2.5 !h-2.5 !bg-slate-400 !border-2 !border-white !opacity-80"
+        className="!w-2 !h-2 !bg-[#657d89] !border-none"
       />
     </div>
   );
@@ -103,24 +109,27 @@ export default function TopologyMap({
   onUpdateNodePosition,
   onDeleteNode,
   onPingNode,
+  onNavigateToLogs,
 }) {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [selectedNodeId, setSelectedNodeId] = useState(null);
+
+  // Modal States
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [pingStatus, setPingStatus] = useState(null);
   const [isPinging, setIsPinging] = useState(false);
 
-  // Form State untuk Tambah Node
+  // Form States
   const [formData, setFormData] = useState({
     label: '',
     type: 'server',
-    ip_address: '192.168.10.',
-    port: 80,
+    ip_address: '',
+    port: 0,
     parent_id: '',
   });
 
-  // Form State untuk Edit Node
   const [editFormData, setEditFormData] = useState({
     label: '',
     type: 'server',
@@ -129,147 +138,241 @@ export default function TopologyMap({
     parent_id: '',
   });
 
-  const nodeTypes = useMemo(() => ({ device: DeviceNode }), []);
+  const nodeTypes = useMemo(() => ({ deviceNode: DeviceNode }), []);
 
-  // Sinkronisasi data node & relasi edge ke React Flow
+  // Build Topology Graph
   useEffect(() => {
-    // 1. Generate Nodes
-    const flowNodes = rawNodes.map((item) => ({
-      id: item.id,
-      type: 'device',
-      position: { x: item.pos_x ?? 200, y: item.pos_y ?? 200 },
-      selected: item.id === selectedNodeId,
+    if (!rawNodes || rawNodes.length === 0) return;
+
+    // Convert Nodes
+    const flowNodes = rawNodes.map((n) => ({
+      id: n.id,
+      type: 'deviceNode',
+      position: { x: n.pos_x ?? 100, y: n.pos_y ?? 100 },
       data: {
-        ...item,
+        label: n.label,
+        type: n.type,
+        ip_address: n.ip_address,
+        port: n.port,
+        status: n.status || 'UP',
+        latency_ms: n.latency_ms,
+        parent_id: n.parent_id,
       },
     }));
 
-    // 2. Generate Edges dari parent_id
+    // Convert Edges (Dashed red/salmon for down nodes)
     const flowEdges = rawNodes
-      .filter((item) => item.parent_id)
-      .map((item) => {
-        const isDown = item.status === 'DOWN';
+      .filter((n) => n.parent_id)
+      .map((n) => {
+        const isParentDown = rawNodes.find((p) => p.id === n.parent_id)?.status === 'DOWN';
+        const isNodeDown = n.status === 'DOWN';
+        const isDown = isParentDown || isNodeDown;
+
         return {
-          id: `edge-${item.parent_id}-${item.id}`,
-          source: item.parent_id,
-          target: item.id,
-          type: 'default',
-          animated: true,
+          id: `e-${n.parent_id}-${n.id}`,
+          source: n.parent_id,
+          target: n.id,
+          type: 'smoothstep',
+          animated: !isDown,
           style: {
-            stroke: isDown ? '#ef4444' : '#64748b',
+            stroke: isDown ? '#f29583' : '#5ce4bd',
             strokeWidth: 2,
-            strokeDasharray: isDown ? '5 5' : 'none',
+            strokeDasharray: isDown ? '5,5' : undefined,
           },
           markerEnd: {
             type: MarkerType.ArrowClosed,
-            color: isDown ? '#ef4444' : '#64748b',
-            width: 16,
-            height: 16,
+            width: 14,
+            height: 14,
+            color: isDown ? '#f29583' : '#5ce4bd',
           },
         };
       });
 
     setNodes(flowNodes);
     setEdges(flowEdges);
-  }, [rawNodes, selectedNodeId, setNodes, setEdges]);
+  }, [rawNodes, setNodes, setEdges]);
 
-  const selectedNodeData = useMemo(() => {
-    return rawNodes.find((n) => n.id === selectedNodeId) || null;
-  }, [rawNodes, selectedNodeId]);
-
+  // Handle Drag Position
   const handleNodeDragStop = useCallback(
     (_, node) => {
       if (onUpdateNodePosition) {
-        onUpdateNodePosition(node.id, {
-          pos_x: Math.round(node.position.x),
-          pos_y: Math.round(node.position.y),
-        });
+        onUpdateNodePosition(node.id, Math.round(node.position.x), Math.round(node.position.y));
       }
     },
     [onUpdateNodePosition]
   );
 
-  const handleOpenEditModal = () => {
+  const selectedNodeData = useMemo(() => {
+    return rawNodes.find((n) => n.id === selectedNodeId);
+  }, [rawNodes, selectedNodeId]);
+
+  const parentNode = useMemo(() => {
+    if (!selectedNodeData?.parent_id) return null;
+    return rawNodes.find((n) => n.id === selectedNodeData.parent_id);
+  }, [rawNodes, selectedNodeData]);
+
+  // Handle Ping Single Node
+  const handleRunPing = async () => {
+    if (!selectedNodeData) return;
+    setIsPinging(true);
+    setPingStatus('Pinging...');
+    try {
+      if (onPingNode) {
+        const res = await onPingNode(selectedNodeData.id);
+        if (res && res.status === 'UP') {
+          setPingStatus(`UP (${res.latency_ms ?? 1}ms)`);
+        } else {
+          setPingStatus('DOWN (Tidak merespons)');
+        }
+      } else {
+        setTimeout(() => {
+          setPingStatus(selectedNodeData.status === 'DOWN' ? 'DOWN (Request timeout)' : 'UP (1ms)');
+          setIsPinging(false);
+        }, 600);
+        return;
+      }
+    } catch {
+      setPingStatus('Gagal menguji');
+    }
+    setIsPinging(false);
+  };
+
+  const handleCreateNode = async (e) => {
+    e.preventDefault();
+    if (!formData.label || !formData.ip_address) return;
+    if (onAddNode) {
+      await onAddNode({
+        ...formData,
+        port: parseInt(formData.port, 10) || 0,
+        pos_x: 250 + Math.random() * 80,
+        pos_y: 200 + Math.random() * 80,
+      });
+    }
+    setIsAddModalOpen(false);
+    setFormData({ label: '', type: 'server', ip_address: '', port: 0, parent_id: '' });
+  };
+
+  const handleOpenEdit = () => {
     if (!selectedNodeData) return;
     setEditFormData({
-      label: selectedNodeData.label || '',
-      type: selectedNodeData.type || 'server',
-      ip_address: selectedNodeData.ip_address || '',
-      port: selectedNodeData.port ?? 0,
+      label: selectedNodeData.label,
+      type: selectedNodeData.type,
+      ip_address: selectedNodeData.ip_address,
+      port: selectedNodeData.port || 0,
       parent_id: selectedNodeData.parent_id || '',
     });
     setIsEditModalOpen(true);
   };
 
-  const handleSaveEdit = (e) => {
+  const handleSaveEdit = async (e) => {
     e.preventDefault();
-    if (!selectedNodeId || !onUpdateNode) return;
-    onUpdateNode(selectedNodeId, {
-      ...editFormData,
-      port: Number(editFormData.port) || 0,
-      parent_id: editFormData.parent_id || null,
-    });
+    if (!selectedNodeData) return;
+    if (onUpdateNode) {
+      await onUpdateNode(selectedNodeData.id, {
+        ...editFormData,
+        port: parseInt(editFormData.port, 10) || 0,
+      });
+    }
     setIsEditModalOpen(false);
   };
 
-  const handleCreateNode = (e) => {
-    e.preventDefault();
-    const newNode = {
-      ...formData,
-      port: Number(formData.port) || 0,
-      parent_id: formData.parent_id || null,
-      pos_x: 600,
-      pos_y: 200 + rawNodes.length * 30,
-    };
-    if (onAddNode) onAddNode(newNode);
-    setIsAddModalOpen(false);
-    setFormData({
-      label: '',
-      type: 'server',
-      ip_address: '192.168.10.',
-      port: 80,
-      parent_id: '',
-    });
+  const handleDelete = async () => {
+    if (!selectedNodeData) return;
+    if (confirm(`Yakin ingin menghapus node "${selectedNodeData.label}"?`)) {
+      if (onDeleteNode) {
+        await onDeleteNode(selectedNodeData.id);
+      }
+      setSelectedNodeId(null);
+    }
   };
 
-  const handleTestPing = async () => {
-    if (!selectedNodeId || !onPingNode || isPinging) return;
-    setIsPinging(true);
-    await onPingNode(selectedNodeId);
-    setTimeout(() => setIsPinging(false), 500);
-  };
+  // Stats
+  const totalCount = rawNodes.length;
+  const onlineCount = rawNodes.filter((n) => n.status === 'UP').length;
+  const downCount = rawNodes.filter((n) => n.status === 'DOWN').length;
 
   return (
-    <div className="np-topology-shell bg-[#0e1320] rounded-2xl border border-slate-800 shadow-2xl overflow-hidden">
+    <div className="space-y-5 w-full">
       {/* ==========================================
-          AREA UTAMA: KANVAS PUTIH TOPOLOGI
+          HEADER TOPOLOGY MAP (Sesuai Desain Figma)
       ========================================== */}
-      <div className="np-topology-main bg-slate-50 overflow-hidden">
-        {/* Header Atas Kanvas */}
-        <div className="z-10 flex items-center justify-between px-8 py-4 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
-          <div>
-            <div className="flex items-center gap-2">
-              <Layers className="w-5 h-5 text-teal-600" />
-              <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-                Interactive Topology Map
-              </h1>
-            </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Geser posisi perangkat dan klik pada node untuk melihat detail IP, port, dan pengujian koneksi
-            </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <span className="text-[10px] font-bold text-[#5ce4bd] uppercase tracking-wider block">
+            MONITORING / 02
+          </span>
+          <h1 className="text-[28px] font-bold text-[#edf4f5] tracking-tight mt-0.5">
+            Topology Map
+          </h1>
+          <p className="text-[13px] text-[#91a4ae] mt-0.5">
+            Lihat koneksi, temukan gangguan, kenali dampaknya.
+          </p>
+        </div>
+
+        <button
+          onClick={() => setIsAddModalOpen(true)}
+          className="bg-[#5ce4bd] hover:bg-[#4cd4ad] text-[#0b1015] font-semibold text-xs px-4 py-2.5 rounded-[8px] flex items-center gap-1.5 shadow-sm transition-all active:scale-[0.98]"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Add node</span>
+        </button>
+      </div>
+
+      {/* ==========================================
+          INCIDENT BANNER (Jika Ada Node Down)
+      ========================================== */}
+      {downCount > 0 && (
+        <div className="bg-[#2a1d1a] border border-[#442721] rounded-[10px] px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <span className="w-2 h-2 rounded-full bg-[#f29583] animate-pulse" />
+            <span className="text-[13px] font-semibold text-[#f29583]">
+              Gangguan koneksi terdeteksi
+            </span>
+            <span className="text-[12px] text-[#91a4ae] hidden sm:inline">
+              Periksa router utama untuk memulihkan koneksi perangkat.
+            </span>
           </div>
 
           <button
-            onClick={() => setIsAddModalOpen(true)}
-            className="np-btn np-btn--primary"
+            onClick={() => (onNavigateToLogs ? onNavigateToLogs() : null)}
+            className="text-[12px] font-medium text-[#f29583] hover:underline flex items-center gap-1"
           >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Add Node</span>
+            <span>Lihat connection logs</span>
+            <ExternalLink className="w-3 h-3" />
           </button>
         </div>
+      )}
 
-        {/* Kanvas React Flow */}
-        <div className="flex-1 w-full h-full np-topology-canvas !border-none !rounded-none">
+      {/* ==========================================
+          CANVAS SHELL + REACT FLOW + RIGHT DRAWER
+      ========================================== */}
+      <div className="relative bg-[#0e151c] border border-[#1f2c35] rounded-[12px] overflow-hidden flex h-[620px] shadow-sm">
+        {/* React Flow Canvas */}
+        <div className="flex-1 w-full h-full relative">
+          {/* Over-canvas: Local network label (Top Left) */}
+          <div className="absolute top-4 left-5 z-10 pointer-events-none">
+            <div className="text-[13px] font-semibold text-[#edf4f5]">
+              Local network
+            </div>
+            <div className="text-[11px] font-mono text-[#91a4ae]">
+              192.168.10.0/24
+            </div>
+          </div>
+
+          {/* Over-canvas: Legend Pills (Top Right) */}
+          <div className="absolute top-4 right-5 z-10 flex items-center gap-3 bg-[#152028]/90 backdrop-blur-sm border border-[#243139] px-3 py-1.5 rounded-[8px] text-[11px] font-medium text-[#91a4ae]">
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#5ce4bd]" />
+              Online
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#f29583]" />
+              Down
+            </span>
+            <span className="text-[#657d89] font-mono">- - - Link</span>
+          </div>
+
+          {/* React Flow Component */}
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -280,213 +383,218 @@ export default function TopologyMap({
             onPaneClick={() => setSelectedNodeId(null)}
             onNodeDragStop={handleNodeDragStop}
             fitView
-            fitViewOptions={{ padding: 0.18 }}
+            fitViewOptions={{ padding: 0.2 }}
           >
-            <Background color="#cbd5e1" gap={20} size={1.5} />
+            <Background color="#1f2d38" gap={22} size={1.2} />
             <Controls
               position="bottom-left"
-              className="!bg-white !border !border-slate-200 !rounded-xl !shadow-md overflow-hidden"
+              className="!bg-[#152028] !border !border-[#243139] !rounded-[8px] !shadow-lg overflow-hidden [&>button]:!bg-[#152028] [&>button]:!border-b [&>button]:!border-[#243139] [&>button]:!fill-[#edf4f5] [&>button:hover]:!bg-[#1a2530]"
             />
           </ReactFlow>
-        </div>
-      </div>
 
-      {/* ==========================================
-          DRAWER KANAN: DETAIL PERANGKAT (MASTER STYLESHEET)
-      ========================================== */}
-      {selectedNodeData && (
-        <aside className="np-drawer">
-          <div>
-            {/* Header Drawer */}
-            <div className="np-drawer-header">
-              <div className="np-drawer-title">
-                <div className="p-2 rounded-xl bg-slate-800/80 border border-slate-700/60 text-sky-400 shadow-inner">
-                  {selectedNodeData.type === 'router' ? (
-                    <RouterIcon className="w-5 h-5" />
-                  ) : selectedNodeData.type === 'switch' ? (
-                    <Network className="w-5 h-5" />
-                  ) : selectedNodeData.type === 'server' ? (
-                    <Server className="w-5 h-5" />
-                  ) : (
-                    <Monitor className="w-5 h-5" />
-                  )}
-                </div>
+          {/* Over-canvas: Nodes count indicator (Bottom Right) */}
+          <div className="absolute bottom-3 right-4 z-10 text-[11px] font-mono text-[#657d89]">
+            {totalCount} nodes · {edges.length} links
+          </div>
+        </div>
+
+        {/* ==========================================
+            RIGHT DRAWER: DEVICE DETAILS (Figma Match)
+        ========================================== */}
+        {selectedNodeData && (
+          <aside className="w-[300px] shrink-0 bg-[#10171d] border-l border-[#1f2c35] p-5 flex flex-col justify-between overflow-y-auto z-20 shadow-xl animate-in slide-in-from-right duration-200">
+            <div>
+              {/* Header Drawer */}
+              <div className="flex items-center justify-between pb-3 border-b border-[#1b262e] mb-4">
+                <span className="text-[10px] font-bold text-[#657d89] uppercase tracking-wider">
+                  DEVICE DETAILS
+                </span>
+                {selectedNodeData.status === 'DOWN' ? (
+                  <span className="bg-[#34231f] border border-[#4d2d25] text-[#f29583] text-[10px] font-semibold px-2 py-0.5 rounded-[4px] flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#f29583]" />
+                    Down
+                  </span>
+                ) : (
+                  <span className="bg-[#163229] border border-[#214f3f] text-[#5ce4bd] text-[10px] font-semibold px-2 py-0.5 rounded-[4px] flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#5ce4bd]" />
+                    Online
+                  </span>
+                )}
+              </div>
+
+              {/* Device Title */}
+              <h2 className="text-[18px] font-bold text-[#edf4f5] leading-snug">
+                {selectedNodeData.label}
+              </h2>
+              <p className="text-[11px] text-[#91a4ae] capitalize mt-0.5">
+                {selectedNodeData.type} · Local workspace
+              </p>
+
+              {/* Specs List */}
+              <div className="space-y-3 mt-5 text-xs">
                 <div>
-                  <h2 className="font-bold text-sm text-white tracking-tight">
-                    {selectedNodeData.label}
-                  </h2>
-                  <span className="text-[11px] font-mono text-slate-400 uppercase tracking-wider">
-                    {selectedNodeData.type}
+                  <span className="text-[10px] font-semibold text-[#657d89] uppercase block mb-0.5">
+                    IP address
+                  </span>
+                  <span className="font-mono text-[#edf4f5] text-[13px]">
+                    {selectedNodeData.ip_address}
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-[10px] font-semibold text-[#657d89] uppercase block mb-0.5">
+                    Operating system
+                  </span>
+                  <span className="text-[#edf4f5]">
+                    {selectedNodeData.type === 'router'
+                      ? 'MikroTik RouterOS'
+                      : selectedNodeData.type === 'switch'
+                      ? 'Layer 2 Switch OS'
+                      : 'Debian 12'}
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-[10px] font-semibold text-[#657d89] uppercase block mb-0.5">
+                    Monitoring
+                  </span>
+                  <span className="text-[#edf4f5]">
+                    {selectedNodeData.port > 0 ? `TCP / Port ${selectedNodeData.port}` : 'ICMP / TCP'}
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-[10px] font-semibold text-[#657d89] uppercase block mb-0.5">
+                    Status koneksi
+                  </span>
+                  <span
+                    className={`font-medium ${
+                      selectedNodeData.status === 'DOWN' ? 'text-[#f29583]' : 'text-[#5ce4bd]'
+                    }`}
+                  >
+                    {selectedNodeData.status === 'DOWN'
+                      ? 'Tidak merespons'
+                      : `Normal (${selectedNodeData.latency_ms ?? 1}ms)`}
                   </span>
                 </div>
               </div>
+
+              {/* Parent Connection Card */}
+              {parentNode && (
+                <div className="mt-5 pt-4 border-t border-[#1b262e]">
+                  <span className="text-[10px] font-bold text-[#657d89] uppercase tracking-wider block mb-2">
+                    KONEKSI LANGSUNG
+                  </span>
+                  <div className="bg-[#152028] border border-[#243139] rounded-[8px] p-2.5">
+                    <div className="text-[12px] font-semibold text-[#edf4f5]">
+                      {parentNode.label}
+                    </div>
+                    <div className="text-[10px] text-[#f29583] mt-0.5 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#f29583]" />
+                      Link terputus
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Diagnostic & Action Buttons */}
+            <div className="pt-4 border-t border-[#1b262e] space-y-2">
+              <span className="text-[10px] font-bold text-[#657d89] uppercase tracking-wider block mb-1">
+                DIAGNOSTIK
+              </span>
+
               <button
-                onClick={() => setSelectedNodeId(null)}
-                className="np-icon-btn"
-                title="Tutup"
+                onClick={handleRunPing}
+                disabled={isPinging}
+                className="w-full bg-[#5ce4bd] hover:bg-[#4cd4ad] text-[#0b1015] font-semibold text-xs py-2 rounded-[8px] flex items-center justify-center gap-1.5 shadow-sm transition active:scale-[0.98] disabled:opacity-60"
               >
-                <X className="w-4 h-4" />
+                <Activity className="w-3.5 h-3.5" />
+                <span>{pingStatus || 'Jalankan ping ↗'}</span>
               </button>
-            </div>
 
-            {/* Tabel Spesifikasi Node (Key-Value) */}
-            <div className="np-kv-list">
-              <div className="np-kv-row">
-                <span className="np-kv-key">Hostname</span>
-                <span className="np-kv-val font-semibold text-white">{selectedNodeData.label}</span>
-              </div>
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <button
+                  onClick={handleOpenEdit}
+                  className="bg-[#172127] border border-[#243139] hover:bg-[#1f2c35] text-[#edf4f5] text-xs py-1.5 rounded-[6px] flex items-center justify-center gap-1"
+                >
+                  <Edit2 className="w-3 h-3 text-[#91a4ae]" />
+                  <span>Edit</span>
+                </button>
 
-              <div className="np-kv-row">
-                <span className="np-kv-key">IP Address</span>
-                <span className="np-kv-val font-mono bg-slate-900/60 px-2 py-0.5 rounded border border-slate-800">
-                  {selectedNodeData.ip_address}
-                </span>
-              </div>
-
-              <div className="np-kv-row">
-                <span className="np-kv-key">TCP Port</span>
-                <span className="np-kv-val font-mono">
-                  {selectedNodeData.port && selectedNodeData.port > 0
-                    ? `${selectedNodeData.port} (${
-                        selectedNodeData.port === 53
-                          ? 'DNS'
-                          : selectedNodeData.port === 22
-                          ? 'SSH'
-                          : selectedNodeData.port === 80
-                          ? 'HTTP'
-                          : selectedNodeData.port === 8291
-                          ? 'Winbox'
-                          : 'TCP'
-                      })`
-                    : 'ICMP (Ping)'}
-                </span>
-              </div>
-
-              <div className="np-kv-row">
-                <span className="np-kv-key">Parent Node</span>
-                <span className="np-kv-val">
-                  {rawNodes.find((n) => n.id === selectedNodeData.parent_id)?.label || 'None (Root)'}
-                </span>
-              </div>
-
-              <div className="np-kv-row">
-                <span className="np-kv-key">Status</span>
-                <span className="np-kv-val">
-                  {selectedNodeData.status === 'DOWN' ? (
-                    <span className="np-pill np-pill--down">
-                      <span className="np-dot np-dot--down animate-ping" />
-                      Offline (DOWN)
-                    </span>
-                  ) : (
-                    <span className="np-pill np-pill--up">
-                      <span className="np-dot np-dot--up" />
-                      Active ({selectedNodeData.latency_ms ?? 0}ms)
-                    </span>
-                  )}
-                </span>
+                <button
+                  onClick={handleDelete}
+                  className="bg-[#241717] border border-[#442721] hover:bg-[#341f1f] text-[#f29583] text-xs py-1.5 rounded-[6px] flex items-center justify-center gap-1"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Hapus</span>
+                </button>
               </div>
             </div>
+          </aside>
+        )}
+      </div>
 
-            {/* Sparkline Latency History dengan Area Gradient Fill */}
-            <div className="mt-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                  Latency History
-                </span>
-                <span className="text-[11px] font-mono text-slate-400">Past 30m</span>
-              </div>
-
-              <div className="h-20 w-full bg-slate-900/90 rounded-xl border border-slate-800 flex items-end p-2 overflow-hidden shadow-inner">
-                <svg viewBox="0 0 200 50" className="w-full h-full overflow-visible" preserveAspectRatio="none">
-                  <defs>
-                    <linearGradient id="latencyAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop
-                        offset="0%"
-                        stopColor={selectedNodeData.status === 'DOWN' ? '#ef4444' : '#10b981'}
-                        stopOpacity="0.3"
-                      />
-                      <stop
-                        offset="100%"
-                        stopColor={selectedNodeData.status === 'DOWN' ? '#ef4444' : '#10b981'}
-                        stopOpacity="0.0"
-                      />
-                    </linearGradient>
-                  </defs>
-                  {/* Area fill */}
-                  <path
-                    d={
-                      selectedNodeData.status === 'DOWN'
-                        ? 'M 0 50 L 0 45 L 40 45 L 60 48 L 100 48 L 140 45 L 200 48 L 200 50 Z'
-                        : 'M 0 50 L 0 40 L 30 40 L 40 10 L 50 40 L 100 40 L 115 32 L 150 35 L 200 34 L 200 50 Z'
-                    }
-                    fill="url(#latencyAreaGrad)"
-                  />
-                  {/* Stroke curve */}
-                  <path
-                    d={
-                      selectedNodeData.status === 'DOWN'
-                        ? 'M 0 45 L 40 45 L 60 48 L 100 48 L 140 45 L 200 48'
-                        : 'M 0 40 L 30 40 L 40 10 L 50 40 L 100 40 L 115 32 L 150 35 L 200 34'
-                    }
-                    fill="none"
-                    stroke={selectedNodeData.status === 'DOWN' ? '#ef4444' : '#10b981'}
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
+      {/* ==========================================
+          BOTTOM 3 SUMMARY CARDS (Sesuai Desain Figma)
+      ========================================== */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="bg-[#111921] border border-[#1f2c35] rounded-[12px] p-5 flex items-center gap-4 shadow-sm">
+          <span className="text-[36px] font-bold text-[#edf4f5] font-mono leading-none">
+            {String(totalCount).padStart(2, '0')}
+          </span>
+          <div>
+            <div className="text-[13px] font-semibold text-[#edf4f5]">
+              Total perangkat
+            </div>
+            <div className="text-[11px] text-[#91a4ae] mt-0.5">
+              Seluruh node dalam jaringan
             </div>
           </div>
+        </div>
 
-          {/* Tombol Aksi Bawah */}
-          <div className="np-drawer-actions">
-            <button
-              onClick={handleTestPing}
-              disabled={isPinging}
-              className="np-btn np-btn--primary w-full"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isPinging ? 'animate-spin' : ''}`} />
-              <span>{isPinging ? 'Testing Ping...' : 'Test Ping Ulang'}</span>
-            </button>
-
-            <div className="np-drawer-actions-row">
-              <button
-                onClick={handleOpenEditModal}
-                className="np-btn np-btn--secondary"
-              >
-                <Edit2 className="w-3.5 h-3.5 text-slate-400" />
-                <span>Edit Node</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  if (onDeleteNode) onDeleteNode(selectedNodeData.id);
-                  setSelectedNodeId(null);
-                }}
-                className="np-btn np-btn--danger-outline"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>Hapus Node</span>
-              </button>
+        <div className="bg-[#111921] border border-[#1f2c35] rounded-[12px] p-5 flex items-center gap-4 shadow-sm">
+          <span className="text-[36px] font-bold text-[#5ce4bd] font-mono leading-none">
+            {String(onlineCount).padStart(2, '0')}
+          </span>
+          <div>
+            <div className="text-[13px] font-semibold text-[#edf4f5]">
+              Perangkat online
+            </div>
+            <div className="text-[11px] text-[#91a4ae] mt-0.5">
+              {onlineCount > 0 ? 'Responsif normal' : 'Belum ada respons aktif'}
             </div>
           </div>
-        </aside>
-      )}
+        </div>
+
+        <div className="bg-[#111921] border border-[#1f2c35] rounded-[12px] p-5 flex items-center gap-4 shadow-sm">
+          <span className="text-[36px] font-bold text-[#f29583] font-mono leading-none">
+            {String(downCount).padStart(2, '0')}
+          </span>
+          <div>
+            <div className="text-[13px] font-semibold text-[#edf4f5]">
+              Perangkat down
+            </div>
+            <div className="text-[11px] text-[#91a4ae] mt-0.5">
+              {downCount > 0 ? 'Perlu pemeriksaan koneksi' : 'Semua perangkat normal'}
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* ==========================================
           MODAL: + ADD NODE
       ========================================== */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md bg-[#111624] border border-slate-800 rounded-2xl p-6 text-slate-200 shadow-2xl">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-              <h3 className="text-base font-bold text-white tracking-tight">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md bg-[#111921] border border-[#1f2c35] rounded-[12px] p-6 text-[#edf4f5] shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-[#1b262e]">
+              <h3 className="text-sm font-bold text-[#edf4f5]">
                 Tambah Perangkat Jaringan (Node)
               </h3>
               <button
                 onClick={() => setIsAddModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition"
+                className="text-[#91a4ae] hover:text-[#edf4f5] p-1 rounded-md"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -494,7 +602,7 @@ export default function TopologyMap({
 
             <form onSubmit={handleCreateNode} className="mt-4 space-y-3.5 text-xs">
               <div>
-                <label className="block text-slate-400 mb-1 font-semibold uppercase tracking-wider text-[10px]">
+                <label className="block text-[#91a4ae] mb-1 font-semibold uppercase text-[10px]">
                   Nama Perangkat (Label)
                 </label>
                 <input
@@ -503,21 +611,21 @@ export default function TopologyMap({
                   placeholder="Contoh: DNS Server BIND9"
                   value={formData.label}
                   onChange={(e) => setFormData({ ...formData, label: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-white focus:outline-none focus:border-teal-500 shadow-inner"
+                  className="w-full px-3 py-2 bg-[#152028] border border-[#243139] rounded-[8px] text-[#edf4f5] focus:outline-none focus:border-[#5ce4bd]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-400 mb-1 font-semibold uppercase tracking-wider text-[10px]">
+                  <label className="block text-[#91a4ae] mb-1 font-semibold uppercase text-[10px]">
                     Tipe
                   </label>
                   <select
                     value={formData.type}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-white focus:outline-none focus:border-teal-500"
+                    className="w-full px-3 py-2 bg-[#152028] border border-[#243139] rounded-[8px] text-[#edf4f5] focus:outline-none focus:border-[#5ce4bd]"
                   >
-                    <option value="router">Router (MikroTik)</option>
+                    <option value="router">Router</option>
                     <option value="switch">Switch</option>
                     <option value="server">Server</option>
                     <option value="client">Client</option>
@@ -525,13 +633,13 @@ export default function TopologyMap({
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 mb-1 font-semibold uppercase tracking-wider text-[10px]">
+                  <label className="block text-[#91a4ae] mb-1 font-semibold uppercase text-[10px]">
                     Parent Node
                   </label>
                   <select
                     value={formData.parent_id}
                     onChange={(e) => setFormData({ ...formData, parent_id: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-white focus:outline-none focus:border-teal-500"
+                    className="w-full px-3 py-2 bg-[#152028] border border-[#243139] rounded-[8px] text-[#edf4f5] focus:outline-none focus:border-[#5ce4bd]"
                   >
                     <option value="">-- Root (Tanpa Parent) --</option>
                     {rawNodes.map((n) => (
@@ -545,7 +653,7 @@ export default function TopologyMap({
 
               <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-2">
-                  <label className="block text-slate-400 mb-1 font-semibold uppercase tracking-wider text-[10px]">
+                  <label className="block text-[#91a4ae] mb-1 font-semibold uppercase text-[10px]">
                     IP Address
                   </label>
                   <input
@@ -554,12 +662,12 @@ export default function TopologyMap({
                     placeholder="192.168.10.1"
                     value={formData.ip_address}
                     onChange={(e) => setFormData({ ...formData, ip_address: e.target.value })}
-                    className="w-full px-3.5 py-2 bg-slate-900 border border-slate-700/80 rounded-xl font-mono text-white focus:outline-none focus:border-teal-500 shadow-inner"
+                    className="w-full px-3 py-2 bg-[#152028] border border-[#243139] rounded-[8px] font-mono text-[#edf4f5] focus:outline-none focus:border-[#5ce4bd]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 mb-1 font-semibold uppercase tracking-wider text-[10px]">
+                  <label className="block text-[#91a4ae] mb-1 font-semibold uppercase text-[10px]">
                     Port (0=Ping)
                   </label>
                   <input
@@ -567,22 +675,22 @@ export default function TopologyMap({
                     placeholder="53"
                     value={formData.port}
                     onChange={(e) => setFormData({ ...formData, port: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl font-mono text-white focus:outline-none focus:border-teal-500 shadow-inner"
+                    className="w-full px-3 py-2 bg-[#152028] border border-[#243139] rounded-[8px] font-mono text-[#edf4f5] focus:outline-none focus:border-[#5ce4bd]"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-800">
+              <div className="flex justify-end gap-2.5 pt-4 border-t border-[#1b262e]">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-medium transition"
+                  className="px-3.5 py-1.5 bg-[#172127] hover:bg-[#1f2c35] text-[#91a4ae] rounded-[6px] font-medium"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white font-semibold rounded-xl transition shadow-md shadow-teal-500/25"
+                  className="px-4 py-1.5 bg-[#5ce4bd] hover:bg-[#4cd4ad] text-[#0b1015] font-semibold rounded-[6px] shadow-sm"
                 >
                   Simpan Node
                 </button>
@@ -596,15 +704,15 @@ export default function TopologyMap({
           MODAL: EDIT NODE
       ========================================== */}
       {isEditModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md bg-[#111624] border border-slate-800 rounded-2xl p-6 text-slate-200 shadow-2xl">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-              <h3 className="text-base font-bold text-white tracking-tight">
-                Edit Perangkat (Node)
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md bg-[#111921] border border-[#1f2c35] rounded-[12px] p-6 text-[#edf4f5] shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-[#1b262e]">
+              <h3 className="text-sm font-bold text-[#edf4f5]">
+                Edit Perangkat Jaringan (Node)
               </h3>
               <button
                 onClick={() => setIsEditModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition"
+                className="text-[#91a4ae] hover:text-[#edf4f5] p-1 rounded-md"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -612,7 +720,7 @@ export default function TopologyMap({
 
             <form onSubmit={handleSaveEdit} className="mt-4 space-y-3.5 text-xs">
               <div>
-                <label className="block text-slate-400 mb-1 font-semibold uppercase tracking-wider text-[10px]">
+                <label className="block text-[#91a4ae] mb-1 font-semibold uppercase text-[10px]">
                   Nama Perangkat (Label)
                 </label>
                 <input
@@ -620,21 +728,21 @@ export default function TopologyMap({
                   required
                   value={editFormData.label}
                   onChange={(e) => setEditFormData({ ...editFormData, label: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-white focus:outline-none focus:border-teal-500 shadow-inner"
+                  className="w-full px-3 py-2 bg-[#152028] border border-[#243139] rounded-[8px] text-[#edf4f5] focus:outline-none focus:border-[#5ce4bd]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-400 mb-1 font-semibold uppercase tracking-wider text-[10px]">
+                  <label className="block text-[#91a4ae] mb-1 font-semibold uppercase text-[10px]">
                     Tipe
                   </label>
                   <select
                     value={editFormData.type}
                     onChange={(e) => setEditFormData({ ...editFormData, type: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-white focus:outline-none focus:border-teal-500"
+                    className="w-full px-3 py-2 bg-[#152028] border border-[#243139] rounded-[8px] text-[#edf4f5] focus:outline-none focus:border-[#5ce4bd]"
                   >
-                    <option value="router">Router (MikroTik)</option>
+                    <option value="router">Router</option>
                     <option value="switch">Switch</option>
                     <option value="server">Server</option>
                     <option value="client">Client</option>
@@ -642,13 +750,13 @@ export default function TopologyMap({
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 mb-1 font-semibold uppercase tracking-wider text-[10px]">
+                  <label className="block text-[#91a4ae] mb-1 font-semibold uppercase text-[10px]">
                     Parent Node
                   </label>
                   <select
                     value={editFormData.parent_id}
                     onChange={(e) => setEditFormData({ ...editFormData, parent_id: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-white focus:outline-none focus:border-teal-500"
+                    className="w-full px-3 py-2 bg-[#152028] border border-[#243139] rounded-[8px] text-[#edf4f5] focus:outline-none focus:border-[#5ce4bd]"
                   >
                     <option value="">-- Root (Tanpa Parent) --</option>
                     {rawNodes
@@ -664,7 +772,7 @@ export default function TopologyMap({
 
               <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-2">
-                  <label className="block text-slate-400 mb-1 font-semibold uppercase tracking-wider text-[10px]">
+                  <label className="block text-[#91a4ae] mb-1 font-semibold uppercase text-[10px]">
                     IP Address
                   </label>
                   <input
@@ -672,34 +780,34 @@ export default function TopologyMap({
                     required
                     value={editFormData.ip_address}
                     onChange={(e) => setEditFormData({ ...editFormData, ip_address: e.target.value })}
-                    className="w-full px-3.5 py-2 bg-slate-900 border border-slate-700/80 rounded-xl font-mono text-white focus:outline-none focus:border-teal-500 shadow-inner"
+                    className="w-full px-3 py-2 bg-[#152028] border border-[#243139] rounded-[8px] font-mono text-[#edf4f5] focus:outline-none focus:border-[#5ce4bd]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 mb-1 font-semibold uppercase tracking-wider text-[10px]">
+                  <label className="block text-[#91a4ae] mb-1 font-semibold uppercase text-[10px]">
                     Port
                   </label>
                   <input
                     type="number"
                     value={editFormData.port}
                     onChange={(e) => setEditFormData({ ...editFormData, port: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl font-mono text-white focus:outline-none focus:border-teal-500 shadow-inner"
+                    className="w-full px-3 py-2 bg-[#152028] border border-[#243139] rounded-[8px] font-mono text-[#edf4f5] focus:outline-none focus:border-[#5ce4bd]"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-800">
+              <div className="flex justify-end gap-2.5 pt-4 border-t border-[#1b262e]">
                 <button
                   type="button"
                   onClick={() => setIsEditModalOpen(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-medium transition"
+                  className="px-3.5 py-1.5 bg-[#172127] hover:bg-[#1f2c35] text-[#91a4ae] rounded-[6px] font-medium"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white font-semibold rounded-xl transition shadow-md shadow-teal-500/25"
+                  className="px-4 py-1.5 bg-[#5ce4bd] hover:bg-[#4cd4ad] text-[#0b1015] font-semibold rounded-[6px] shadow-sm"
                 >
                   Simpan Perubahan
                 </button>
