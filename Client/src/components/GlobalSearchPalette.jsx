@@ -212,6 +212,31 @@ export default function GlobalSearchPalette({
                 </div>
                 <ArrowRight className="w-3.5 h-3.5 text-[#657d89] group-hover:text-[#f0b849] transition-transform group-hover:translate-x-0.5" />
               </button>
+
+              {!nodes.some((n) => n.ip_address === q) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onNavigateTab?.('topology');
+                    setIsOpen(false);
+                  }}
+                  className="w-full flex items-center justify-between p-2 rounded-[8px] bg-[#152028] hover:bg-[#1a2933] border border-transparent hover:border-[#214f3f] transition text-left group"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-[6px] bg-[#163229] border border-[#214f3f] flex items-center justify-center text-[#5ce4bd]">
+                      <Layers className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-[#edf4f5] group-hover:text-[#5ce4bd] flex items-center gap-1.5">
+                        <span>Pantau Host Ini di Topologi</span>
+                        <code className="text-[#5ce4bd] font-mono text-[11px] bg-[#0e161c] px-1 rounded">{q}</code>
+                      </div>
+                      <div className="text-[10px] text-[#91a4ae]">Buka Topologi Map untuk menambahkan perangkat ini</div>
+                    </div>
+                  </div>
+                  <ArrowRight className="w-3.5 h-3.5 text-[#657d89] group-hover:text-[#5ce4bd] transition-transform group-hover:translate-x-0.5" />
+                </button>
+              )}
             </div>
           </div>
         )}
