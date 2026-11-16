@@ -37,73 +37,23 @@ if (countNodes.count === 0) {
   const seedNodes = [
     {
       id: 'node-1',
-      label: 'Router MikroTik',
-      type: 'router',
-      ip_address: '192.168.10.254',
-      port: 8291,
+      label: 'Local Server',
+      type: 'server',
+      ip_address: '127.0.0.1',
+      port: 8080,
       parent_id: null,
-      pos_x: 80,
-      pos_y: 260
+      pos_x: 280,
+      pos_y: 200
     },
     {
       id: 'node-2',
-      label: 'Main Switch',
-      type: 'switch',
-      ip_address: '192.168.10.253',
+      label: 'Default Gateway',
+      type: 'router',
+      ip_address: '192.168.1.1',
       port: 0,
       parent_id: 'node-1',
-      pos_x: 340,
-      pos_y: 260
-    },
-    {
-      id: 'node-3',
-      label: 'DNS Server BIND9',
-      type: 'server',
-      ip_address: '192.168.10.1',
-      port: 53,
-      parent_id: 'node-2',
-      pos_x: 600,
-      pos_y: 80
-    },
-    {
-      id: 'node-4',
-      label: 'Debian Server 12',
-      type: 'server',
-      ip_address: '192.168.10.2',
-      port: 22,
-      parent_id: 'node-2',
-      pos_x: 600,
-      pos_y: 170
-    },
-    {
-      id: 'node-5',
-      label: 'CBT Simulator',
-      type: 'server',
-      ip_address: '192.168.10.3',
-      port: 80,
-      parent_id: 'node-2',
-      pos_x: 600,
-      pos_y: 260
-    },
-    {
-      id: 'node-6',
-      label: 'Client-3',
-      type: 'client',
-      ip_address: '192.168.10.15',
-      port: 0,
-      parent_id: 'node-2',
-      pos_x: 600,
-      pos_y: 350
-    },
-    {
-      id: 'node-7',
-      label: 'Client-1',
-      type: 'client',
-      ip_address: '192.168.10.20',
-      port: 0,
-      parent_id: 'node-2',
-      pos_x: 600,
-      pos_y: 440
+      pos_x: 560,
+      pos_y: 200
     }
   ];
 
@@ -115,16 +65,6 @@ if (countNodes.count === 0) {
   console.log('Seed nodes sesuai mockup berhasil ditambahkan ke PingKu.db!');
 }
 
-// Seed alert logs jika kosong
-const countLogs = db.prepare('SELECT COUNT(*) AS count FROM alert_logs').get();
-if (countLogs.count === 0) {
-  const insertLog = db.prepare(`
-    INSERT INTO alert_logs (timestamp, severity, message)
-    VALUES (?, ?, ?)
-  `);
-  insertLog.run(new Date(Date.now() - 1000 * 60 * 15).toISOString(), 'CRITICAL', 'Client-3 connection lost (192.168.10.15)');
-  insertLog.run(new Date(Date.now() - 1000 * 60 * 45).toISOString(), 'WARNING', 'CPU utilization spike (>80%) on Debian 12 Server');
-  insertLog.run(new Date(Date.now() - 1000 * 60 * 90).toISOString(), 'RESOLVED', 'BGP Peering established with MikroTik Router');
-}
+// alert_logs dibiarkan bersih pada inisialisasi awal, akan diisi secara live oleh alerter.js
 
 module.exports = db;

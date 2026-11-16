@@ -92,8 +92,8 @@ export default function TopMetricCards({ system, history = [] }) {
         </div>
 
         <div className="flex items-center justify-between text-[11px] text-[#91a4ae] pt-2 border-t border-[#1b262e]">
-          <span>Intel Xeon · 4 cores</span>
-          <span className="font-mono">Disk {diskPercent}%</span>
+          <span>Host Server</span>
+          <span className="font-mono">{diskPercent ? `Disk ${diskPercent}%` : 'Disk -'}</span>
         </div>
       </div>
 
@@ -158,7 +158,7 @@ export default function TopMetricCards({ system, history = [] }) {
         </div>
 
         <div className="flex items-center justify-between text-[11px] text-[#91a4ae] pt-2 border-t border-[#1b262e]">
-          <span>eth0 · Full duplex</span>
+          <span>Network Interface · Full duplex</span>
         </div>
       </div>
     </div>

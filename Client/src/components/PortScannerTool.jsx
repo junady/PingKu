@@ -137,7 +137,7 @@ export default function PortScannerTool() {
                 value={host}
                 disabled={isScanning}
                 onChange={(e) => setHost(e.target.value)}
-                placeholder="192.168.10.1 atau 127.0.0.1"
+                placeholder="127.0.0.1 atau 8.8.8.8"
                 className="w-full px-3.5 py-2.5 bg-slate-950/70 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-teal-500 font-mono shadow-inner"
               />
             </div>

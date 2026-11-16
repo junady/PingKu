@@ -4,7 +4,7 @@ import { RotateCw, CheckCircle, ExternalLink, ShieldCheck } from 'lucide-react';
 export default function SettingsView({ isConnected }) {
   const [backendUrl, setBackendUrl] = useState('http://localhost:8080');
   const [wsUrl, setWsUrl] = useState('ws://localhost:8080/ws');
-  const [dnsResolver, setDnsResolver] = useState('Public DNS over HTTPS & BIND9');
+  const [dnsResolver, setDnsResolver] = useState('Cloudflare & Google Public DNS (1.1.1.1 / 8.8.8.8)');
   const [port, setPort] = useState(53);
   const [intervalSec, setIntervalSec] = useState(2);
   const [probeMethod, setProbeMethod] = useState('ICMP / TCP');
@@ -19,7 +19,7 @@ export default function SettingsView({ isConnected }) {
   const handleReset = () => {
     setBackendUrl('http://localhost:8080');
     setWsUrl('ws://localhost:8080/ws');
-    setDnsResolver('Public DNS over HTTPS & BIND9');
+    setDnsResolver('Cloudflare & Google Public DNS (1.1.1.1 / 8.8.8.8)');
     setPort(53);
     setIntervalSec(2);
     setProbeMethod('ICMP / TCP');
@@ -128,7 +128,7 @@ export default function SettingsView({ isConnected }) {
                       className="w-full bg-[#152028] border border-[#243139] rounded-[8px] px-3.5 py-2 text-[#edf4f5] focus:outline-none focus:border-[#5ce4bd]"
                     />
                     <span className="text-[11px] text-[#657d89] mt-1 block">
-                      BIND9 tersedia di 192.168.10.1.
+                      DNS upstream publik atau resolver lokal (port 53).
                     </span>
                   </div>
 

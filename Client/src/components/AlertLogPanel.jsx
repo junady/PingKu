@@ -1,6 +1,16 @@
 import React from 'react';
 import { Clock } from 'lucide-react';
 
+function extractHost(msg) {
+  if (!msg) return '-';
+  const match = msg.match(/\((\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\)/);
+  if (match) return match[1];
+  if (msg.toLowerCase().includes('cpu') || msg.toLowerCase().includes('server')) {
+    return 'Local Server';
+  }
+  return '-';
+}
+
 export default function AlertLogPanel({ logs = [] }) {
   const formatTime = (ts, fallbackStr) => {
     if (fallbackStr) return fallbackStr;
@@ -75,7 +85,7 @@ export default function AlertLogPanel({ logs = [] }) {
             ) : (
               logs.slice(0, 8).map((log, idx) => {
                 const eventText = log.event || log.message || 'System Notification';
-                const hostText = log.host || '192.168.10.1';
+                const hostText = log.host || extractHost(eventText);
                 const timeText = formatTime(log.timestamp, log.timeStr);
 
                 return (

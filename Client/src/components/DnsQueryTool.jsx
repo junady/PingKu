@@ -278,7 +278,8 @@ export default function DnsQueryTool() {
                 className="np-select"
               >
                 <option value="auto">Public DNS / Auto (Google & Cloudflare)</option>
-                <option value="192.168.10.1">Local BIND9 (192.168.10.1)</option>
+                <option value="1.1.1.1">Cloudflare DNS (1.1.1.1)</option>
+                <option value="8.8.8.8">Google DNS (8.8.8.8)</option>
                 <option value="127.0.0.1">Localhost (127.0.0.1)</option>
               </select>
             </div>

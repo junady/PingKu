@@ -81,18 +81,8 @@ function HostStatusRow({ node }) {
 }
 
 export default function ServiceHostStatus({ nodes = [] }) {
-  const defaultNodes = [
-    { id: 'n1', label: 'Router MikroTik', type: 'router', ip_address: '192.168.10.254', status: 'UP', latency_ms: 1 },
-    { id: 'n2', label: 'Main Switch', type: 'switch', ip_address: '192.168.10.253', status: 'UP', latency_ms: 1 },
-    { id: 'n3', label: 'DNS Server BIND9', type: 'server', ip_address: '192.168.10.1', status: 'UP', latency_ms: 1 },
-    { id: 'n4', label: 'Debian Server 12', type: 'server', ip_address: '192.168.10.2', status: 'UP', latency_ms: 1 },
-    { id: 'n5', label: 'CBT Simulator', type: 'server', ip_address: '192.168.10.3', status: 'UP', latency_ms: 1 },
-    { id: 'n6', label: 'Client-3', type: 'client', ip_address: '192.168.10.15', status: 'DOWN', latency_ms: null },
-    { id: 'n7', label: 'Client-1', type: 'client', ip_address: '192.168.10.20', status: 'DOWN', latency_ms: null },
-  ];
-
-  const listToRender = nodes.length > 0 ? nodes : defaultNodes;
-  const incidentCount = listToRender.filter((n) => n.status === 'DOWN').length;
+  const hasNodes = Array.isArray(nodes) && nodes.length > 0;
+  const incidentCount = hasNodes ? nodes.filter((n) => n.status === 'DOWN').length : 0;
 
   return (
     <div className="bg-[#111921] border border-[#1f2c35] rounded-[12px] p-6 shadow-sm">
@@ -108,20 +98,26 @@ export default function ServiceHostStatus({ nodes = [] }) {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 text-xs text-[#91a4ae] font-medium">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#5ce4bd]" />
-            <span>99.8% uptime</span>
-          </div>
+          {hasNodes && (
+            <div className="flex items-center gap-1.5 text-xs text-[#91a4ae] font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#5ce4bd]" />
+              <span>{incidentCount === 0 ? '100% uptime' : `${Math.round(((nodes.length - incidentCount) / nodes.length) * 100)}% uptime`}</span>
+            </div>
+          )}
 
           {incidentCount > 0 ? (
-            <span className="bg-[#34231f] border border-[#4d2d25] text-[#f29583] text-xs font-semibold px-2.5 py-1 rounded-[6px] flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#f29583]" />
+            <span className="bg-[#34231f] border border-[#4d2d25] text-[#f29583] text-xs font-semibold px-2.5 py-1 rounded-[6px] flex items-center gap-1.5 shadow-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#f29583] animate-pulse" />
               {incidentCount} active incident{incidentCount > 1 ? 's' : ''}
             </span>
-          ) : (
-            <span className="bg-[#163229] border border-[#214f3f] text-[#5ce4bd] text-xs font-semibold px-2.5 py-1 rounded-[6px] flex items-center gap-1.5">
+          ) : hasNodes ? (
+            <span className="bg-[#163229] border border-[#214f3f] text-[#5ce4bd] text-xs font-semibold px-2.5 py-1 rounded-[6px] flex items-center gap-1.5 shadow-sm">
               <span className="w-1.5 h-1.5 rounded-full bg-[#5ce4bd]" />
               All operational
+            </span>
+          ) : (
+            <span className="bg-[#152028] border border-[#243139] text-[#91a4ae] text-xs px-2.5 py-1 rounded-[6px]">
+              0 host
             </span>
           )}
         </div>
@@ -137,9 +133,18 @@ export default function ServiceHostStatus({ nodes = [] }) {
 
       {/* Rows */}
       <div>
-        {listToRender.map((node) => (
-          <HostStatusRow key={node.id} node={node} />
-        ))}
+        {!hasNodes ? (
+          <div className="py-12 text-center text-[#91a4ae]">
+            <div className="text-[13px] font-semibold text-[#edf4f5]">Belum ada perangkat terdaftar</div>
+            <div className="text-[11px] text-[#657d89] mt-0.5 max-w-sm mx-auto">
+              Daftarkan perangkat atau host di menu Topology Map untuk mulai memantau ketersediaan jaringan secara real-time.
+            </div>
+          </div>
+        ) : (
+          nodes.map((node) => (
+            <HostStatusRow key={node.id} node={node} />
+          ))
+        )}
       </div>
     </div>
   );

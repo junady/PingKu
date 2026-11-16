@@ -93,7 +93,7 @@ function calculateVlsm(cidrInput, reqs) {
 }
 
 export default function VlsmCalculator() {
-  const [baseCidr, setBaseCidr] = useState('192.168.10.0/24');
+  const [baseCidr, setBaseCidr] = useState('192.168.1.0/24');
   const [requirements, setRequirements] = useState([
     { id: 1, name: 'LAN 1: Admin', hosts: 60, color: PRESET_COLORS[0] },
     { id: 2, name: 'LAN 2: Staff', hosts: 30, color: PRESET_COLORS[1] },
@@ -162,7 +162,7 @@ export default function VlsmCalculator() {
               type="text"
               value={baseCidr}
               onChange={(e) => setBaseCidr(e.target.value)}
-              placeholder="192.168.10.0/24"
+              placeholder="192.168.1.0/24"
               className="np-input font-mono flex-1"
             />
             <button

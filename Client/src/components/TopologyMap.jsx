@@ -398,13 +398,13 @@ export default function TopologyMap({
       <div className="relative bg-[#0e151c] border border-[#1f2c35] rounded-[12px] overflow-hidden flex h-[620px] shadow-sm">
         {/* React Flow Canvas */}
         <div className="flex-1 w-full h-full relative">
-          {/* Over-canvas: Local network label (Top Left) */}
+          {/* Over-canvas: Network status label (Top Left) */}
           <div className="absolute top-4 left-5 z-10 pointer-events-none">
             <div className="text-[13px] font-semibold text-[#edf4f5]">
-              Local network
+              Network Topology
             </div>
             <div className="text-[11px] font-mono text-[#91a4ae]">
-              192.168.10.0/24
+              {totalCount > 0 ? `${totalCount} node terpantau` : 'Belum ada node'}
             </div>
           </div>
 
@@ -440,6 +440,26 @@ export default function TopologyMap({
               className="!bg-[#152028] !border !border-[#243139] !rounded-[8px] !shadow-lg overflow-hidden [&>button]:!bg-[#152028] [&>button]:!border-b [&>button]:!border-[#243139] [&>button]:!fill-[#edf4f5] [&>button:hover]:!bg-[#1a2530]"
             />
           </ReactFlow>
+
+          {/* Over-canvas: Empty State Overlay */}
+          {totalCount === 0 && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
+              <div className="bg-[#152028]/95 border border-[#243139] p-6 rounded-[12px] text-center max-w-sm pointer-events-auto shadow-xl backdrop-blur-sm">
+                <div className="text-[14px] font-semibold text-[#edf4f5]">Topologi Masih Kosong</div>
+                <div className="text-xs text-[#91a4ae] mt-1 mb-4 leading-relaxed">
+                  Belum ada perangkat yang didaftarkan. Tambahkan node untuk mulai memantau topologi secara real-time.
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(true)}
+                  className="bg-[#5ce4bd] hover:bg-[#4cd4ad] text-[#0b1015] font-semibold text-xs px-4 py-2 rounded-[6px] transition shadow-sm inline-flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Tambah Perangkat Baru</span>
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Over-canvas: Nodes count indicator (Bottom Right) */}
           <div className="absolute bottom-3 right-4 z-10 text-[11px] font-mono text-[#657d89]">
@@ -497,20 +517,16 @@ export default function TopologyMap({
                     IP address
                   </span>
                   <span className="font-mono text-[#edf4f5] text-[13px]">
-                    {selectedNodeData.ip_address}
+                    {selectedNodeData.ip_address || '-'}
                   </span>
                 </div>
 
                 <div>
                   <span className="text-[10px] font-semibold text-[#657d89] uppercase block mb-0.5">
-                    Operating system
+                    Tipe perangkat
                   </span>
-                  <span className="text-[#edf4f5]">
-                    {selectedNodeData.type === 'router'
-                      ? 'MikroTik RouterOS'
-                      : selectedNodeData.type === 'switch'
-                      ? 'Layer 2 Switch OS'
-                      : 'Debian 12'}
+                  <span className="text-[#edf4f5] capitalize">
+                    {selectedNodeData.type || '-'}
                   </span>
                 </div>
 
@@ -519,7 +535,7 @@ export default function TopologyMap({
                     Monitoring
                   </span>
                   <span className="text-[#edf4f5]">
-                    {selectedNodeData.port > 0 ? `TCP / Port ${selectedNodeData.port}` : 'ICMP / TCP'}
+                    {selectedNodeData.port > 0 ? `TCP / Port ${selectedNodeData.port}` : 'ICMP Ping (Port -)'}
                   </span>
                 </div>
 
@@ -719,7 +735,7 @@ export default function TopologyMap({
                   <input
                     type="text"
                     required
-                    placeholder="192.168.10.1"
+                    placeholder="192.168.1.1 atau 127.0.0.1"
                     value={formData.ip_address}
                     onChange={(e) => setFormData({ ...formData, ip_address: e.target.value })}
                     className="w-full px-3 py-2 bg-[#152028] border border-[#243139] rounded-[8px] font-mono text-[#edf4f5] focus:outline-none focus:border-[#5ce4bd]"
@@ -732,7 +748,7 @@ export default function TopologyMap({
                   </label>
                   <input
                     type="number"
-                    placeholder="53"
+                    placeholder="0"
                     value={formData.port}
                     onChange={(e) => setFormData({ ...formData, port: e.target.value })}
                     className="w-full px-3 py-2 bg-[#152028] border border-[#243139] rounded-[8px] font-mono text-[#edf4f5] focus:outline-none focus:border-[#5ce4bd]"
