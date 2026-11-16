@@ -17,5 +17,6 @@
     "react-flow",
     "network"
   ],
+  "author": "Arjuna Setya Ramadhani",
   "license": "AGPL-3.0-or-later"
 }

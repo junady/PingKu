@@ -273,5 +273,7 @@ Untuk menguji kemampuan pemantauan di lingkungan homelab/jaringan nyata:
 
 ## 📄 Lisensi (License)
 
+Copyright (C) 2026 Arjuna Setya Ramadhani.
+
 Proyek ini dilisensikan di bawah ketentuan **GNU Affero General Public License v3.0 (AGPL-3.0)**.  
 Lihat berkas [`LICENSE`](file:///d:/Juna%20Task/PingKu/LICENSE) untuk rincian lengkap mengenai hak penggunaan, distribusi, dan modifikasi kode sumber terbuka.
