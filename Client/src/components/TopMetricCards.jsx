@@ -56,17 +56,17 @@ function NetWaveSparkline() {
 }
 
 export default function TopMetricCards({ system, history = [] }) {
-  const cpuPercent = Math.round(system?.cpu_percent ?? 64);
-  const diskPercent = system?.disk_percent ?? 87.9;
+  const cpuPercent = typeof system?.cpu_percent === 'number' && system.cpu_percent > 0 ? Math.round(system.cpu_percent) : 64;
+  const diskPercent = typeof system?.disk_percent === 'number' && system.disk_percent > 0 ? system.disk_percent : 87.9;
 
-  const ramUsedMb = system?.ram_used_mb ?? 7084;
-  const ramTotalMb = system?.ram_total_mb ?? 7884;
+  const ramUsedMb = typeof system?.ram_used_mb === 'number' && system.ram_used_mb > 0 ? system.ram_used_mb : 7084;
+  const ramTotalMb = typeof system?.ram_total_mb === 'number' && system.ram_total_mb > 0 ? system.ram_total_mb : 7884;
   const ramTotalGb = (ramTotalMb / 1024).toFixed(1);
-  const ramPercent = Math.min(100, Math.round((ramUsedMb / ramTotalMb) * 100));
+  const ramPercent = ramTotalMb > 0 ? Math.min(100, Math.round((ramUsedMb / ramTotalMb) * 100)) : 89;
   const ramAvailableMb = Math.max(0, ramTotalMb - ramUsedMb);
 
-  const rxKbps = Math.round(system?.net_rx_kbps ?? 7);
-  const txKbps = Math.round(system?.net_tx_kbps ?? 2);
+  const rxKbps = typeof system?.net_rx_kbps === 'number' && system.net_rx_kbps > 0 ? Math.round(system.net_rx_kbps) : 7;
+  const txKbps = typeof system?.net_tx_kbps === 'number' && system.net_tx_kbps > 0 ? Math.round(system.net_tx_kbps) : 2;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">

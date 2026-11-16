@@ -81,14 +81,18 @@ function HostStatusRow({ node }) {
 }
 
 export default function ServiceHostStatus({ nodes = [] }) {
-  const displayNodes = nodes.filter((n) =>
-    ['Router MikroTik', 'DNS Server BIND9', 'Debian Server 12', 'Client-3', 'Debian Server'].some(
-      (name) => n.label.toLowerCase().includes(name.toLowerCase())
-    )
-  );
+  const defaultNodes = [
+    { id: 'n1', label: 'Router MikroTik', type: 'router', ip_address: '192.168.10.254', status: 'UP', latency_ms: 1 },
+    { id: 'n2', label: 'Main Switch', type: 'switch', ip_address: '192.168.10.253', status: 'UP', latency_ms: 1 },
+    { id: 'n3', label: 'DNS Server BIND9', type: 'server', ip_address: '192.168.10.1', status: 'UP', latency_ms: 1 },
+    { id: 'n4', label: 'Debian Server 12', type: 'server', ip_address: '192.168.10.2', status: 'UP', latency_ms: 1 },
+    { id: 'n5', label: 'CBT Simulator', type: 'server', ip_address: '192.168.10.3', status: 'UP', latency_ms: 1 },
+    { id: 'n6', label: 'Client-3', type: 'client', ip_address: '192.168.10.15', status: 'DOWN', latency_ms: null },
+    { id: 'n7', label: 'Client-1', type: 'client', ip_address: '192.168.10.20', status: 'DOWN', latency_ms: null },
+  ];
 
-  const listToRender = displayNodes.length > 0 ? displayNodes : nodes.slice(0, 4);
-  const incidentCount = nodes.filter((n) => n.status === 'DOWN').length;
+  const listToRender = nodes.length > 0 ? nodes : defaultNodes;
+  const incidentCount = listToRender.filter((n) => n.status === 'DOWN').length;
 
   return (
     <div className="bg-[#111921] border border-[#1f2c35] rounded-[12px] p-6 shadow-sm">

@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 
 export default function SystemPerformanceChart({ history = [] }) {
   const [timeframe, setTimeframe] = useState('24h');
 
   // Sample or live 24h curve coordinates
-  const points = [
+  const defaultPoints = [
     { x: 0, y: 64, time: '00:00' },
     { x: 50, y: 72, time: '02:00' },
     { x: 100, y: 68, time: '04:00' },
@@ -19,6 +19,17 @@ export default function SystemPerformanceChart({ history = [] }) {
     { x: 550, y: 72, time: '22:00' },
     { x: 600, y: 69, time: '23:59' },
   ];
+
+  const points = useMemo(() => {
+    if (history && history.length >= 4) {
+      return history.map((item, idx) => ({
+        x: (idx / (history.length - 1)) * 600,
+        y: Math.min(100, Math.max(0, item.cpu_percent || 0)),
+        time: item.time ? new Date(item.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : `${idx}`,
+      }));
+    }
+    return defaultPoints;
+  }, [history]);
 
   const svgWidth = 600;
   const svgHeight = 160;

@@ -41,13 +41,16 @@ export function useTelemetry() {
 
       if (nodesRes.ok) {
         const nodesData = await nodesRes.json();
-        setNodes(
-          nodesData.map((node) => ({
-            ...node,
-            status: node.status || 'UNKNOWN',
-            latency_ms: node.latency_ms ?? null,
-          }))
-        );
+        setNodes((prevNodes) => {
+          return nodesData.map((node) => {
+            const existing = prevNodes.find((n) => n.id === node.id);
+            return {
+              ...node,
+              status: existing?.status || node.status || 'UNKNOWN',
+              latency_ms: existing?.latency_ms ?? node.latency_ms ?? null,
+            };
+          });
+        });
       }
 
       if (logsRes.ok) {
@@ -86,7 +89,8 @@ export function useTelemetry() {
             if (Array.isArray(data.nodes)) {
               setNodes((prevNodes) => {
                 if (prevNodes.length === 0) {
-                  return data.nodes;
+                  fetchInitialData();
+                  return prevNodes;
                 }
                 return prevNodes.map((node) => {
                   const live = data.nodes.find((n) => n.id === node.id);
@@ -162,16 +166,27 @@ export function useTelemetry() {
     }
   };
 
-  const updateNodePosition = async (id, pos) => {
+  const updateNodePosition = async (id, xOrPos, maybeY) => {
+    let pos_x, pos_y;
+    if (typeof xOrPos === 'object' && xOrPos !== null) {
+      pos_x = xOrPos.pos_x ?? xOrPos.x;
+      pos_y = xOrPos.pos_y ?? xOrPos.y;
+    } else {
+      pos_x = xOrPos;
+      pos_y = maybeY;
+    }
+
+    if (pos_x === undefined || pos_y === undefined) return;
+
     setNodes((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, pos_x: pos.pos_x, pos_y: pos.pos_y } : n))
+      prev.map((n) => (n.id === id ? { ...n, pos_x, pos_y } : n))
     );
 
     try {
       await fetch(`${API_BASE}/nodes/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(pos),
+        body: JSON.stringify({ pos_x, pos_y }),
       });
     } catch (err) {
       console.error('Gagal simpan posisi node:', err);

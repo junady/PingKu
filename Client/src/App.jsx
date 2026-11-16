@@ -310,6 +310,7 @@ export default function App() {
                 onUpdateNodePosition={updateNodePosition}
                 onDeleteNode={deleteNode}
                 onPingNode={pingNode}
+                onNavigateToLogs={() => setActiveTab('logs')}
               />
             </div>
           )}

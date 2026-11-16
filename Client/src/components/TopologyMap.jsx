@@ -28,7 +28,7 @@ import {
 // ==========================================
 // 1. CUSTOM NODE (Sesuai Desain Figma Dark NOC)
 // ==========================================
-const DeviceNode = ({ data, selected }) => {
+const DeviceNode = ({ id, data, selected }) => {
   const isDown = data.status === 'DOWN';
 
   const renderIcon = () => {
@@ -48,7 +48,11 @@ const DeviceNode = ({ data, selected }) => {
 
   return (
     <div
-      className={`bg-[#152028] border rounded-[10px] p-3.5 min-w-[200px] shadow-lg cursor-pointer transition-all duration-200 ${
+      onClick={(e) => {
+        e.stopPropagation();
+        if (data.onSelect) data.onSelect();
+      }}
+      className={`bg-[#152028] border rounded-[10px] p-3.5 min-w-[200px] shadow-lg cursor-pointer transition-all duration-200 select-none ${
         selected
           ? 'border-[#5ce4bd] ring-2 ring-[#5ce4bd]/20 shadow-[0_0_15px_rgba(92,228,189,0.15)]'
           : isDown
@@ -140,25 +144,55 @@ export default function TopologyMap({
 
   const nodeTypes = useMemo(() => ({ deviceNode: DeviceNode }), []);
 
-  // Build Topology Graph
+  // Build and Synchronize Topology Graph
   useEffect(() => {
     if (!rawNodes || rawNodes.length === 0) return;
 
-    // Convert Nodes
-    const flowNodes = rawNodes.map((n) => ({
-      id: n.id,
-      type: 'deviceNode',
-      position: { x: n.pos_x ?? 100, y: n.pos_y ?? 100 },
-      data: {
-        label: n.label,
-        type: n.type,
-        ip_address: n.ip_address,
-        port: n.port,
-        status: n.status || 'UP',
-        latency_ms: n.latency_ms,
-        parent_id: n.parent_id,
-      },
-    }));
+    setNodes((prevNodes) => {
+      // First initialization or length mismatch:
+      if (prevNodes.length === 0 || prevNodes.length !== rawNodes.length) {
+        return rawNodes.map((n) => ({
+          id: n.id,
+          type: 'deviceNode',
+          selected: n.id === selectedNodeId,
+          position: {
+            x: typeof n.pos_x === 'number' && !isNaN(n.pos_x) ? n.pos_x : 100,
+            y: typeof n.pos_y === 'number' && !isNaN(n.pos_y) ? n.pos_y : 100,
+          },
+          data: {
+            label: n.label,
+            type: n.type,
+            ip_address: n.ip_address,
+            port: n.port,
+            status: n.status || 'UP',
+            latency_ms: n.latency_ms,
+            parent_id: n.parent_id,
+            onSelect: () => setSelectedNodeId(n.id),
+          },
+        }));
+      }
+
+      // Existing nodes: only update data without resetting position or drag
+      return prevNodes.map((flowNode) => {
+        const raw = rawNodes.find((r) => r.id === flowNode.id);
+        if (!raw) return flowNode;
+        return {
+          ...flowNode,
+          selected: flowNode.id === selectedNodeId,
+          data: {
+            ...flowNode.data,
+            label: raw.label,
+            type: raw.type,
+            ip_address: raw.ip_address,
+            port: raw.port,
+            status: raw.status || 'UP',
+            latency_ms: raw.latency_ms,
+            parent_id: raw.parent_id,
+            onSelect: () => setSelectedNodeId(raw.id),
+          },
+        };
+      });
+    });
 
     // Convert Edges (Dashed red/salmon for down nodes)
     const flowEdges = rawNodes
@@ -188,23 +222,38 @@ export default function TopologyMap({
         };
       });
 
-    setNodes(flowNodes);
     setEdges(flowEdges);
-  }, [rawNodes, setNodes, setEdges]);
+  }, [rawNodes, selectedNodeId, setNodes, setEdges]);
 
   // Handle Drag Position
   const handleNodeDragStop = useCallback(
     (_, node) => {
+      setSelectedNodeId(node.id);
       if (onUpdateNodePosition) {
-        onUpdateNodePosition(node.id, Math.round(node.position.x), Math.round(node.position.y));
+        onUpdateNodePosition(node.id, {
+          pos_x: Math.round(node.position.x),
+          pos_y: Math.round(node.position.y),
+        });
       }
     },
     [onUpdateNodePosition]
   );
 
   const selectedNodeData = useMemo(() => {
-    return rawNodes.find((n) => n.id === selectedNodeId);
-  }, [rawNodes, selectedNodeId]);
+    if (!selectedNodeId) return null;
+    const fromRaw = rawNodes.find((n) => n.id === selectedNodeId);
+    if (fromRaw) return fromRaw;
+    const fromFlow = nodes.find((n) => n.id === selectedNodeId);
+    if (fromFlow) {
+      return {
+        id: fromFlow.id,
+        pos_x: fromFlow.position.x,
+        pos_y: fromFlow.position.y,
+        ...fromFlow.data,
+      };
+    }
+    return null;
+  }, [rawNodes, nodes, selectedNodeId]);
 
   const parentNode = useMemo(() => {
     if (!selectedNodeData?.parent_id) return null;
@@ -406,20 +455,31 @@ export default function TopologyMap({
             <div>
               {/* Header Drawer */}
               <div className="flex items-center justify-between pb-3 border-b border-[#1b262e] mb-4">
-                <span className="text-[10px] font-bold text-[#657d89] uppercase tracking-wider">
-                  DEVICE DETAILS
-                </span>
-                {selectedNodeData.status === 'DOWN' ? (
-                  <span className="bg-[#34231f] border border-[#4d2d25] text-[#f29583] text-[10px] font-semibold px-2 py-0.5 rounded-[4px] flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#f29583]" />
-                    Down
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold text-[#657d89] uppercase tracking-wider">
+                    DEVICE DETAILS
                   </span>
-                ) : (
-                  <span className="bg-[#163229] border border-[#214f3f] text-[#5ce4bd] text-[10px] font-semibold px-2 py-0.5 rounded-[4px] flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#5ce4bd]" />
-                    Online
-                  </span>
-                )}
+                  {selectedNodeData.status === 'DOWN' ? (
+                    <span className="bg-[#34231f] border border-[#4d2d25] text-[#f29583] text-[10px] font-semibold px-2 py-0.5 rounded-[4px] flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#f29583]" />
+                      Down
+                    </span>
+                  ) : (
+                    <span className="bg-[#163229] border border-[#214f3f] text-[#5ce4bd] text-[10px] font-semibold px-2 py-0.5 rounded-[4px] flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#5ce4bd]" />
+                      Online
+                    </span>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedNodeId(null)}
+                  className="p-1 rounded-[6px] hover:bg-[#152028] text-[#91a4ae] hover:text-[#edf4f5] transition"
+                  title="Tutup Panel"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
               {/* Device Title */}
