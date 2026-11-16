@@ -6,7 +6,7 @@ const dns = require('dns');
 const { Resolver } = require('dns').promises;
 
 const db = require('./db');
-const { getSystemStats, probeAllNodes, checkTcpPort, checkIcmpPing } = require('./monitor');
+const { getSystemStats, probeAllNodes, checkTcpPort, checkIcmpPing, detectDefaultGateway } = require('./monitor');
 const { evaluateAlerts } = require('./alerter');
 
 const app = express();
@@ -307,6 +307,30 @@ async function broadcastTelemetry() {
 }
 
 setInterval(broadcastTelemetry, 2000);
+
+// Auto-detect & sinkronkan Default Gateway lokal ke node router (Point 3)
+async function syncDefaultGateway() {
+  try {
+    const defaultGw = await detectDefaultGateway();
+    if (defaultGw) {
+      const routerNode = db.prepare("SELECT id, ip_address FROM nodes WHERE type = 'router' OR id = 'node-2' LIMIT 1").get();
+      if (routerNode) {
+        if (routerNode.ip_address !== defaultGw) {
+          db.prepare('UPDATE nodes SET ip_address = ? WHERE id = ?').run(defaultGw, routerNode.id);
+          console.log(`[PingKu] Default Gateway otomatis terdeteksi & disinkronkan (${routerNode.id}): ${defaultGw}`);
+        }
+      } else {
+        const insert = db.prepare('INSERT INTO nodes (id, label, type, ip_address, port, parent_id, pos_x, pos_y) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+        insert.run('node-2', 'Default Gateway', 'router', defaultGw, 0, 'node-1', 560, 200);
+        console.log(`[PingKu] Node Default Gateway (${defaultGw}) otomatis ditambahkan ke topologi.`);
+      }
+    }
+  } catch (err) {
+    console.warn('[PingKu] Deteksi default gateway dilewati:', err.message);
+  }
+}
+
+syncDefaultGateway();
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server PingKu (HTTP & WebSocket) berjalan di http://localhost:${PORT}`);

@@ -92,7 +92,9 @@ export default function TopMetricCards({ system, history = [] }) {
         </div>
 
         <div className="flex items-center justify-between text-[11px] text-[#91a4ae] pt-2 border-t border-[#1b262e]">
-          <span>Host Server</span>
+          <span className="truncate max-w-[140px]" title={system?.cpu_brand || 'Host CPU'}>
+            {system?.cpu_cores ? `${system.cpu_cores} Core CPU` : (system?.cpu_brand || 'Host CPU')}
+          </span>
           <span className="font-mono">{diskPercent ? `Disk ${diskPercent}%` : 'Disk -'}</span>
         </div>
       </div>

@@ -109,11 +109,11 @@ export default function App() {
                 <Layers className="w-3.5 h-3.5" />
               </div>
               <div className="min-w-0">
-                <div className="text-[12px] font-semibold text-[#edf4f5] leading-tight truncate">
-                  Local workspace
+                <div className="text-[12px] font-semibold text-[#edf4f5] leading-tight truncate" title={system?.os_hostname || 'Local Host'}>
+                  {system?.os_hostname || 'Local workspace'}
                 </div>
                 <div className="text-[10px] text-[#91a4ae] truncate">
-                  Debian 12 · Production
+                  {system?.os_distro ? `${system.os_distro} · Host` : 'Server Telemetry · Live'}
                 </div>
               </div>
             </div>
@@ -168,7 +168,7 @@ export default function App() {
             }`}
           >
             <span className="truncate">
-              {isConnected ? 'Debian 12: Connected' : 'Server: Offline (8080)'}
+              {isConnected ? `${system?.os_distro || 'Server'}: Connected` : 'Server: Offline (8080)'}
             </span>
             <span
               className={`w-2 h-2 rounded-full shrink-0 ${
@@ -291,7 +291,9 @@ export default function App() {
               {/* Bottom Footer Info */}
               <div className="flex flex-col sm:flex-row items-center justify-between py-4 border-t border-[#1b262e] text-[11px] text-[#657d89] mt-8 gap-2">
                 <div>
-                  <span className="font-semibold text-[#91a4ae]">PINGKU / LOCAL WORKSPACE</span> · Debian 12 (x86_64) · Node.js v20.x
+                  <span className="font-semibold text-[#91a4ae]">
+                    {system?.os_hostname ? `${system.os_hostname.toUpperCase()} / WORKSPACE` : 'PINGKU / LOCAL WORKSPACE'}
+                  </span> · {system?.os_distro || 'Host Server'} ({system?.os_arch || 'x64'}) · Node.js {system?.node_version || 'v20.x'}
                 </div>
                 <div>
                   Terakhir diperbarui: {new Date().toLocaleTimeString()} · WebSocket 2s interval
@@ -322,7 +324,7 @@ export default function App() {
           {activeTab === 'logs' && <ConnectionLogsView logs={logs} />}
 
           {/* TAB 5: SETTINGS */}
-          {activeTab === 'settings' && <SettingsView isConnected={isConnected} />}
+          {activeTab === 'settings' && <SettingsView isConnected={isConnected} system={system} />}
         </main>
       </div>
     </div>

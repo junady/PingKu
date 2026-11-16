@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { RotateCw, CheckCircle, ExternalLink, ShieldCheck } from 'lucide-react';
 
-export default function SettingsView({ isConnected }) {
+export default function SettingsView({ isConnected, system }) {
   const [backendUrl, setBackendUrl] = useState('http://localhost:8080');
   const [wsUrl, setWsUrl] = useState('ws://localhost:8080/ws');
   const [dnsResolver, setDnsResolver] = useState('Cloudflare & Google Public DNS (1.1.1.1 / 8.8.8.8)');
@@ -237,9 +237,16 @@ export default function SettingsView({ isConnected }) {
                 </span>
               </div>
 
-              <div className="flex items-center justify-between py-1.5">
+              <div className="flex items-center justify-between py-1.5 border-b border-[#1b262e]">
                 <span className="text-[#91a4ae]">Sistem operasi</span>
-                <span className="text-[#edf4f5] font-mono text-[11px]">Debian 12</span>
+                <span className="text-[#edf4f5] font-mono text-[11px]">{system?.os_distro || 'Host Server'}</span>
+              </div>
+
+              <div className="flex items-center justify-between py-1.5">
+                <span className="text-[#91a4ae]">Hostname</span>
+                <span className="text-[#edf4f5] font-mono text-[11px] truncate max-w-[150px]" title={system?.os_hostname}>
+                  {system?.os_hostname || 'localhost'}
+                </span>
               </div>
             </div>
           </div>

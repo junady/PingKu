@@ -1,12 +1,70 @@
+const os = require('os');
 const si = require('systeminformation');
 const net = require('net');
 const { exec } = require('child_process');
+
+// Cache metadata host (OS, hostname, CPU) agar tidak dibaca ulang setiap 2 detik
+let cachedHostInfo = null;
+
+async function getHostInfo() {
+  if (cachedHostInfo) return cachedHostInfo;
+
+  try {
+    const osInfo = await si.osInfo();
+    const distro =
+      osInfo.distro && osInfo.distro.trim() !== ''
+        ? osInfo.distro
+        : osInfo.platform
+        ? `${osInfo.platform}${osInfo.codename ? ' ' + osInfo.codename : ''}`
+        : 'Linux';
+
+    const cpuList = os.cpus() || [];
+    const cpuModel = cpuList[0]?.model?.trim() || 'Processor';
+    const cpuCores = cpuList.length || 1;
+    const hostname = os.hostname() || 'localhost';
+    const arch = os.arch() || 'x64';
+
+    cachedHostInfo = {
+      os_distro: distro,
+      os_hostname: hostname,
+      os_arch: arch,
+      cpu_brand: cpuModel,
+      cpu_cores: cpuCores,
+      node_version: process.version,
+    };
+  } catch {
+    cachedHostInfo = {
+      os_distro: 'Linux',
+      os_hostname: os.hostname() || 'localhost',
+      os_arch: os.arch() || 'x64',
+      cpu_brand: 'Processor',
+      cpu_cores: os.cpus()?.length || 1,
+      node_version: process.version,
+    };
+  }
+
+  return cachedHostInfo;
+}
+
+// Deteksi otomatis default gateway lokal
+async function detectDefaultGateway() {
+  try {
+    const gw = await si.networkGatewayDefault();
+    if (gw && typeof gw === 'string' && /^[0-9.]+$/.test(gw) && gw !== '0.0.0.0') {
+      return gw;
+    }
+  } catch {
+    // Abaikan jika tidak tersedia
+  }
+  return null;
+}
 
 // ==========================================
 // BAGIAN 1: Baca Metrik Kesehatan Server (FR-01)
 // ==========================================
 async function getSystemStats() {
   try {
+    const hostInfo = await getHostInfo();
     const cpuLoad = await si.currentLoad();
     const cpuPercent = cpuLoad && typeof cpuLoad.currentLoad === 'number'
       ? Number(cpuLoad.currentLoad.toFixed(1))
@@ -33,6 +91,7 @@ async function getSystemStats() {
     const netTxKbps = Number((((primaryNet.tx_sec || 0) * 8) / 1000).toFixed(1));
 
     return {
+      ...hostInfo,
       cpu_percent: cpuPercent,
       ram_used_mb: ramUsedMb,
       ram_total_mb: ramTotalMb,
@@ -155,4 +214,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { getSystemStats, probeAllNodes, checkTcpPort, checkIcmpPing };
+module.exports = { getSystemStats, probeAllNodes, checkTcpPort, checkIcmpPing, detectDefaultGateway };
