@@ -23,7 +23,10 @@ import {
   ExternalLink,
   Activity,
   AlertTriangle,
+  Sparkles,
+  CheckCircle2,
 } from 'lucide-react';
+import { getAppSettings } from '../utils/settings';
 
 // ==========================================
 // 1. CUSTOM NODE (Sesuai Desain Figma Dark NOC)
@@ -114,16 +117,56 @@ export default function TopologyMap({
   onDeleteNode,
   onPingNode,
   onNavigateToLogs,
+  onRefreshNodes,
 }) {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [selectedNodeId, setSelectedNodeId] = useState(null);
+
+  // Auto-Discovery States
+  const [isDiscovering, setIsDiscovering] = useState(false);
+  const [discoveryFeedback, setDiscoveryFeedback] = useState(null);
 
   // Modal States
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [pingStatus, setPingStatus] = useState(null);
   const [isPinging, setIsPinging] = useState(false);
+
+  // Auto-Discovery Function
+  const handleAutoDiscover = async () => {
+    setIsDiscovering(true);
+    setDiscoveryFeedback(null);
+    try {
+      const backendUrl = getAppSettings().backendUrl || 'http://localhost:8080';
+      const res = await fetch(`${backendUrl.replace(/\/$/, '')}/api/discovery/scan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ force: false }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDiscoveryFeedback({
+          success: true,
+          message: `Auto-Discovery sukses: ${data.newly_added?.length || 0} perangkat/service dipetakan. Gateway: ${data.discovery?.gateway_ip || 'N/A'}`,
+        });
+        if (onRefreshNodes) onRefreshNodes();
+      } else {
+        setDiscoveryFeedback({
+          success: false,
+          message: 'Server gagal menjalankan discovery.',
+        });
+      }
+    } catch (err) {
+      setDiscoveryFeedback({
+        success: false,
+        message: 'Gagal terhubung ke backend: ' + err.message,
+      });
+    } finally {
+      setIsDiscovering(false);
+      setTimeout(() => setDiscoveryFeedback(null), 4500);
+    }
+  };
 
   // Form States
   const [formData, setFormData] = useState({
@@ -358,14 +401,60 @@ export default function TopologyMap({
           </p>
         </div>
 
-        <button
-          onClick={() => setIsAddModalOpen(true)}
-          className="bg-[#5ce4bd] hover:bg-[#4cd4ad] text-[#0b1015] font-semibold text-xs px-4 py-2.5 rounded-[8px] flex items-center gap-1.5 shadow-sm transition-all active:scale-[0.98]"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add node</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleAutoDiscover}
+            disabled={isDiscovering}
+            className="bg-[#152028] border border-[#243139] hover:border-[#5ce4bd] text-[#edf4f5] hover:text-[#5ce4bd] text-xs px-3.5 py-2.5 rounded-[8px] flex items-center gap-1.5 shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
+            title="Pindai otomatis router gateway & service lokal yang aktif"
+          >
+            {isDiscovering ? (
+              <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#5ce4bd]" />
+            ) : (
+              <Sparkles className="w-3.5 h-3.5 text-[#5ce4bd]" />
+            )}
+            <span>{isDiscovering ? 'Memindai server...' : 'Auto-Discover'}</span>
+          </button>
+
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="bg-[#5ce4bd] hover:bg-[#4cd4ad] text-[#0b1015] font-semibold text-xs px-4 py-2.5 rounded-[8px] flex items-center gap-1.5 shadow-sm transition-all active:scale-[0.98]"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add node</span>
+          </button>
+        </div>
       </div>
+
+      {/* ==========================================
+          AUTO-DISCOVERY FEEDBACK BANNER
+      ========================================== */}
+      {discoveryFeedback && (
+        <div
+          className={`rounded-[10px] px-4 py-2.5 border text-xs flex items-center justify-between animate-in fade-in duration-150 ${
+            discoveryFeedback.success
+              ? 'bg-[#163229] border-[#214f3f] text-[#5ce4bd]'
+              : 'bg-[#34231f] border-[#4d2d25] text-[#f29583]'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {discoveryFeedback.success ? (
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+            ) : (
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+            )}
+            <span>{discoveryFeedback.message}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setDiscoveryFeedback(null)}
+            className="text-[#91a4ae] hover:text-[#edf4f5]"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* ==========================================
           INCIDENT BANNER (Jika Ada Node Down)
@@ -447,16 +536,32 @@ export default function TopologyMap({
               <div className="bg-[#152028]/95 border border-[#243139] p-6 rounded-[12px] text-center max-w-sm pointer-events-auto shadow-xl backdrop-blur-sm">
                 <div className="text-[14px] font-semibold text-[#edf4f5]">Topologi Masih Kosong</div>
                 <div className="text-xs text-[#91a4ae] mt-1 mb-4 leading-relaxed">
-                  Belum ada perangkat yang didaftarkan. Tambahkan node untuk mulai memantau topologi secara real-time.
+                  Belum ada perangkat yang didaftarkan. Kamu bisa memindai otomatis gateway dan service lokal, atau menambahkan perangkat manual.
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setIsAddModalOpen(true)}
-                  className="bg-[#5ce4bd] hover:bg-[#4cd4ad] text-[#0b1015] font-semibold text-xs px-4 py-2 rounded-[6px] transition shadow-sm inline-flex items-center gap-1.5"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Tambah Perangkat Baru</span>
-                </button>
+                <div className="flex items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleAutoDiscover}
+                    disabled={isDiscovering}
+                    className="bg-[#17382f] border border-[#214f3f] text-[#5ce4bd] hover:bg-[#1f4a3e] font-semibold text-xs px-3.5 py-2 rounded-[8px] transition shadow-sm inline-flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    {isDiscovering ? (
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-3.5 h-3.5" />
+                    )}
+                    <span>Auto-Discover</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsAddModalOpen(true)}
+                    className="bg-[#152028] border border-[#243139] hover:bg-[#1a2530] text-[#edf4f5] font-medium text-xs px-3.5 py-2 rounded-[8px] transition inline-flex items-center gap-1.5"
+                  >
+                    <Plus className="w-3.5 h-3.5 text-[#91a4ae]" />
+                    <span>Manual</span>
+                  </button>
+                </div>
               </div>
             </div>
           )}

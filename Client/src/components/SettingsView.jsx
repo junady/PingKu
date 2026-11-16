@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { RotateCw, CheckCircle, ExternalLink, ShieldCheck, Activity, Wifi, Terminal, AlertTriangle, Play, RefreshCw, Check } from 'lucide-react';
+import { RotateCw, CheckCircle, ExternalLink, ShieldCheck, Activity, Wifi, Terminal, AlertTriangle, Play, RefreshCw, Check, Sparkles } from 'lucide-react';
 import { getAppSettings, saveAppSettings, resetAppSettings } from '../utils/settings';
 
 export default function SettingsView({ isConnected, system, nodes = [] }) {
@@ -18,6 +18,32 @@ export default function SettingsView({ isConnected, system, nodes = [] }) {
   // State Uji Koneksi Langsung (Test Ping ke Backend)
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState(null);
+
+  // State Auto-Discovery
+  const [isDiscovering, setIsDiscovering] = useState(false);
+  const [discoveryData, setDiscoveryData] = useState(null);
+
+  const handleRunDiscovery = async () => {
+    setIsDiscovering(true);
+    setDiscoveryData(null);
+    try {
+      const res = await fetch(`${backendUrl.trim().replace(/\/$/, '')}/api/discovery/scan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ force: false }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDiscoveryData(data);
+      } else {
+        setDiscoveryData({ error: 'Gagal menjalankan discovery di backend.' });
+      }
+    } catch (err) {
+      setDiscoveryData({ error: err.message });
+    } finally {
+      setIsDiscovering(false);
+    }
+  };
 
   // Otomatis sinkronkan wsUrl jika backendUrl berubah
   const handleBackendUrlChange = (val) => {
@@ -311,6 +337,73 @@ export default function SettingsView({ isConnected, system, nodes = [] }) {
                     </select>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Section 03: Zero-Config Auto-Discovery */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-[11px] font-bold text-[#5ce4bd] font-mono">03</span>
+                <span className="text-[13px] font-semibold text-[#edf4f5]">
+                  Zero-Config Auto-Discovery
+                </span>
+              </div>
+
+              <div className="space-y-3 pl-4 border-l border-[#1f2c35]">
+                <p className="text-[#91a4ae] text-[11px] leading-relaxed">
+                  Pindai otomatis router gateway dan port service lokal yang sedang aktif di mesin ini (Nginx, Apache, MySQL, Postgres, Redis, SSH, Winbox) lalu petakan langsung ke diagram topologi.
+                </p>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleRunDiscovery}
+                    disabled={isDiscovering}
+                    className="bg-[#17382f] border border-[#214f3f] text-[#5ce4bd] hover:bg-[#1f4a3e] px-4 py-2 rounded-[8px] font-semibold flex items-center gap-1.5 transition disabled:opacity-50"
+                  >
+                    {isDiscovering ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Memindai server & service...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Jalankan Auto-Discovery Sekarang</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {discoveryData && (
+                  <div
+                    className={`p-3 rounded-[8px] border text-[11px] animate-in fade-in duration-150 ${
+                      discoveryData.error
+                        ? 'bg-[#34231f] border-[#4d2d25] text-[#f29583]'
+                        : 'bg-[#163229] border-[#214f3f] text-[#5ce4bd]'
+                    }`}
+                  >
+                    {discoveryData.error ? (
+                      <div>Gagal: {discoveryData.error}</div>
+                    ) : (
+                      <div className="space-y-1">
+                        <div className="font-semibold text-[#edf4f5]">
+                          ✅ Discovery Berhasil Selesai!
+                        </div>
+                        <div className="text-[10px] text-[#91a4ae]">
+                          Host: <span className="text-[#edf4f5] font-mono">{discoveryData.discovery?.primary_ip} ({discoveryData.discovery?.host?.hostname})</span> · Gateway: <span className="text-[#5ce4bd] font-mono">{discoveryData.discovery?.gateway_ip || 'N/A'}</span>
+                        </div>
+                        <div className="text-[10px] text-[#91a4ae]">
+                          {discoveryData.newly_added?.length > 0 ? (
+                            <span>{discoveryData.newly_added.length} perangkat/service baru dipetakan ke topologi.</span>
+                          ) : (
+                            <span>Semua service lokal dan gateway sudah terpetakan di topologi.</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 

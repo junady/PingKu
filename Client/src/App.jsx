@@ -31,6 +31,7 @@ export default function App() {
     nodes,
     logs,
     isConnected,
+    refreshNodes,
     addNode,
     updateNode,
     updateNodePosition,
@@ -354,6 +355,7 @@ export default function App() {
                 onUpdateNodePosition={updateNodePosition}
                 onDeleteNode={deleteNode}
                 onPingNode={pingNode}
+                onRefreshNodes={refreshNodes}
                 onNavigateToLogs={() => setActiveTab('logs')}
               />
             </div>

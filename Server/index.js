@@ -8,6 +8,7 @@ const { Resolver } = require('dns').promises;
 const db = require('./db');
 const { getSystemStats, probeAllNodes, checkTcpPort, checkIcmpPing, detectDefaultGateway } = require('./monitor');
 const { evaluateAlerts } = require('./alerter');
+const { executeAutoDiscovery, syncDiscoveryToDatabase } = require('./discovery');
 
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 8080;
@@ -268,7 +269,34 @@ app.get('/api/logs', (req, res) => {
 });
 
 // ==========================================
-// 4. Server HTTP + WebSocket Broadcast 2 Detik
+// 4. REST API: Auto-Discovery Services & Gateway (/api/discovery)
+// ==========================================
+app.get('/api/discovery', async (req, res) => {
+  try {
+    const result = await executeAutoDiscovery();
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal menjalankan discovery: ' + err.message });
+  }
+});
+
+app.post('/api/discovery/scan', async (req, res) => {
+  try {
+    const result = await syncDiscoveryToDatabase(db, { force: req.body?.force === true });
+    // Broadcast hasil terbaru ke semua client yang terkoneksi
+    broadcastTelemetry();
+    res.json({
+      success: true,
+      message: `Auto-discovery selesai. ${result.newly_added.length} perangkat/service baru dipetakan ke topologi.`,
+      ...result,
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal sinkronisasi discovery: ' + err.message });
+  }
+});
+
+// ==========================================
+// 5. Server HTTP + WebSocket Broadcast 2 Detik
 // ==========================================
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server, path: '/ws' });
@@ -308,29 +336,14 @@ async function broadcastTelemetry() {
 
 setInterval(broadcastTelemetry, 2000);
 
-// Auto-detect & sinkronkan Default Gateway lokal ke node router (Point 3)
-async function syncDefaultGateway() {
-  try {
-    const defaultGw = await detectDefaultGateway();
-    if (defaultGw) {
-      const routerNode = db.prepare("SELECT id, ip_address FROM nodes WHERE type = 'router' OR id = 'node-2' LIMIT 1").get();
-      if (routerNode) {
-        if (routerNode.ip_address !== defaultGw) {
-          db.prepare('UPDATE nodes SET ip_address = ? WHERE id = ?').run(defaultGw, routerNode.id);
-          console.log(`[PingKu] Default Gateway otomatis terdeteksi & disinkronkan (${routerNode.id}): ${defaultGw}`);
-        }
-      } else {
-        const insert = db.prepare('INSERT INTO nodes (id, label, type, ip_address, port, parent_id, pos_x, pos_y) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-        insert.run('node-2', 'Default Gateway', 'router', defaultGw, 0, 'node-1', 560, 200);
-        console.log(`[PingKu] Node Default Gateway (${defaultGw}) otomatis ditambahkan ke topologi.`);
-      }
-    }
-  } catch (err) {
-    console.warn('[PingKu] Deteksi default gateway dilewati:', err.message);
-  }
-}
-
-syncDefaultGateway();
+// Inisialisasi awal & Auto-Discovery perangkat/service lokal saat startup
+syncDiscoveryToDatabase(db)
+  .then((res) => {
+    console.log(`[PingKu Discovery] Siap: Host (${res.discovery.primary_ip}), Gateway (${res.discovery.gateway_ip || 'N/A'}), Total Nodes: ${res.total_nodes}`);
+  })
+  .catch((err) => {
+    console.warn('[PingKu Discovery] Inisialisasi discovery dilewati:', err.message);
+  });
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server PingKu (HTTP & WebSocket) berjalan di http://localhost:${PORT}`);
