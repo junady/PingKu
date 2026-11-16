@@ -1,0 +1,21 @@
+{
+  "name": "pingku",
+  "version": "1.2.0",
+  "description": "PingKu — Lightweight NOC & Server Telemetry Dashboard",
+  "scripts": {
+    "setup": "npm --prefix Server install && npm --prefix Client install && npm --prefix Client run build",
+    "build": "npm --prefix Client run build",
+    "start": "node Server/index.js",
+    "server": "node Server/index.js",
+    "client": "npm --prefix Client run dev"
+  },
+  "keywords": [
+    "noc",
+    "telemetry",
+    "monitoring",
+    "dashboard",
+    "react-flow",
+    "network"
+  ],
+  "license": "MIT"
+}

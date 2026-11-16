@@ -152,25 +152,57 @@ PingKu/
 
 ### Persyaratan Sistem
 - Node.js versi 18 atau lebih baru.
-- Linux (Debian 12 disarankan) / Windows 10/11 / macOS.
+- Linux (Ubuntu/Debian/Alpine/Arch), Windows 10/11, atau macOS.
 
-### 1. Menjalankan Backend Server
-Buka terminal dan masuk ke folder `Server`:
-```bash
-cd Server
-npm install
-node index.js
-```
-*Server akan berjalan di port `http://localhost:8080` dan membuka endpoint WebSocket di `ws://localhost:8080/ws`.*
+---
 
-### 2. Menjalankan Frontend Client
-Buka terminal baru dan masuk ke folder `Client`:
+### Opsi 1: Mode Standalone Production (Satu Perintah — Direkomendasikan)
+Express backend secara otomatis menyajikan frontend production build dari port `8080`:
+
 ```bash
-cd Client
-npm install
-npm run dev
+# 1. Clone repositori
+git clone https://github.com/username/PingKu.git
+cd PingKu
+
+# 2. Setup semua dependensi & build frontend
+npm run setup
+
+# 3. Jalankan aplikasi
+npm start
 ```
-*Buka browser di alamat `http://localhost:5173`.*
+*Buka browser di **`http://localhost:8080`**.*  
+Sistem akan otomatis menjalankan **Zero-Config Auto-Discovery** dan langsung memetakan IP host, gateway, serta service lokal kamu!
+
+> **Tip Port Conflict:** Jika port `8080` sudah digunakan oleh aplikasi lain, cukup jalankan dengan:
+> * Linux/macOS: `PORT=8081 npm start`
+> * Windows PowerShell: `$env:PORT="8081"; npm start`
+
+---
+
+### Opsi 2: Mode Development (Hot-Reload)
+Jika kamu ingin mengembangkan atau memodifikasi kode:
+
+```bash
+# Terminal 1 — Jalankan Backend Server (:8080)
+npm run server
+
+# Terminal 2 — Jalankan Vite Frontend Dev Server (:5173)
+npm run client
+```
+*Buka browser di **`http://localhost:5173`**.*
+
+---
+
+## 🔍 Fitur Zero-Config Auto-Discovery & Command Palette
+
+1. **Zero-Configuration Auto-Discovery**:
+   - Backend memindai interface jaringan lokal (`eth0`, `Wi-Fi`, `ens33`) dan default gateway router (`si.networkGatewayDefault()`).
+   - Memindai service lokal yang sedang aktif (`80/443` Web, `22` SSH, `3306` MySQL, `5432` Postgres, `6379` Redis, `8291` Winbox) dan langsung memetakannya ke diagram topologi.
+   - Tombol **"Auto-Discover"** di Topology Map memungkinkan pemindaian ulang kapan saja saat kamu menyalakan service baru.
+
+2. **Global Search & Command Palette (`Ctrl + K` / `⌘ K`)**:
+   - Akses cepat untuk mencari nama node, alamat IP, dan log insiden.
+   - Jika kamu mengetik alamat IP atau domain apa saja, langsung tersedia tombol aksi cepat: **Jalankan Live Ping**, **Pindai Port Terbuka**, dan **Cek DNS Query**.
 
 ---
 

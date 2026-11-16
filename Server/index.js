@@ -4,6 +4,8 @@ const WebSocket = require('ws');
 const cors = require('cors');
 const dns = require('dns');
 const { Resolver } = require('dns').promises;
+const path = require('path');
+const fs = require('fs');
 
 const db = require('./db');
 const { getSystemStats, probeAllNodes, checkTcpPort, checkIcmpPing, detectDefaultGateway } = require('./monitor');
@@ -301,6 +303,10 @@ app.post('/api/discovery/scan', async (req, res) => {
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server, path: '/ws' });
 
+wss.on('error', (err) => {
+  // Ditangani bersama error server HTTP
+});
+
 wss.on('connection', (ws) => {
   console.log('[WS] Client dashboard terhubung.');
   ws.on('close', () => console.log('[WS] Client dashboard terputus.'));
@@ -325,8 +331,12 @@ async function broadcastTelemetry() {
     });
 
     wss.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(payload);
+      try {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(payload);
+        }
+      } catch (clientErr) {
+        console.warn('[WS] Gagal mengirim paket ke client:', clientErr.message);
       }
     });
   } catch (error) {
@@ -336,6 +346,19 @@ async function broadcastTelemetry() {
 
 setInterval(broadcastTelemetry, 2000);
 
+// ==========================================
+// 6. Sajikan Frontend Production Build (Client/dist)
+// ==========================================
+const distPath = path.join(__dirname, '../Client/dist');
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/ws')) return next();
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+  console.log(`[PingKu Static] Frontend production build terdeteksi & disajikan dari Client/dist`);
+}
+
 // Inisialisasi awal & Auto-Discovery perangkat/service lokal saat startup
 syncDiscoveryToDatabase(db)
   .then((res) => {
@@ -344,6 +367,19 @@ syncDiscoveryToDatabase(db)
   .catch((err) => {
     console.warn('[PingKu Discovery] Inisialisasi discovery dilewati:', err.message);
   });
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`\n[FATAL ERROR] Port ${PORT} sudah digunakan oleh proses/aplikasi lain.`);
+    console.error(`Solusi: Jalankan PingKu pada port lain, contoh:`);
+    console.error(`  Linux/Mac:   PORT=8081 node Server/index.js`);
+    console.error(`  PowerShell:  $env:PORT="8081"; node Server/index.js\n`);
+    process.exit(1);
+  } else {
+    console.error('[FATAL SERVER ERROR]', err);
+    process.exit(1);
+  }
+});
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server PingKu (HTTP & WebSocket) berjalan di http://localhost:${PORT}`);

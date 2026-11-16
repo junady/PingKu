@@ -149,7 +149,7 @@ function checkIcmpPing(ip, timeoutMs = 1500) {
       : `ping -c 1 -W ${Math.ceil(timeoutMs / 1000)} ${ip}`;
 
     const startTime = performance.now();
-    exec(cmd, (error, stdout) => {
+    exec(cmd, { timeout: timeoutMs + 1000 }, (error, stdout) => {
       if (
         error ||
         !stdout ||
@@ -180,19 +180,25 @@ function checkIcmpPing(ip, timeoutMs = 1500) {
 
 // Mengecek seluruh daftar node yang diambil dari database
 async function probeAllNodes(nodesList) {
+  if (!Array.isArray(nodesList)) return [];
+
   const results = await Promise.all(
     nodesList.map(async (node) => {
       let probeResult;
-      if (node.port && node.port > 0) {
-        probeResult = await checkTcpPort(node.ip_address, node.port, 1500);
-      } else {
-        probeResult = await checkIcmpPing(node.ip_address, 1500);
+      try {
+        if (node.port && Number(node.port) > 0) {
+          probeResult = await checkTcpPort(node.ip_address, Number(node.port), 1500);
+        } else {
+          probeResult = await checkIcmpPing(node.ip_address, 1500);
+        }
+      } catch {
+        probeResult = { status: 'DOWN', latency_ms: null };
       }
 
       return {
         id: node.id,
-        status: probeResult.status,
-        latency_ms: probeResult.latency_ms
+        status: probeResult.status || 'DOWN',
+        latency_ms: probeResult.latency_ms ?? null
       };
     })
   );

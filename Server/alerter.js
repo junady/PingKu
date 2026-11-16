@@ -6,19 +6,23 @@ let lastCpuAlertTime = 0; // Mencegah spam log CPU setiap 2 detik
 
 // Fungsi pembantu untuk menyimpan log ke SQLite & membatasi maksimal 100 baris (FR-05)
 function saveAlertLog(severity, message) {
-  const insertStmt = db.prepare(`
-    INSERT INTO alert_logs (timestamp, severity, message)
-    VALUES (datetime('now', 'localtime'), ?, ?)
-  `);
-  insertStmt.run(severity, message);
+  try {
+    const insertStmt = db.prepare(`
+      INSERT INTO alert_logs (timestamp, severity, message)
+      VALUES (datetime('now', 'localtime'), ?, ?)
+    `);
+    insertStmt.run(severity, message);
 
-  // Hapus log terlama jika jumlahnya melebihi 100 baris sesuai spesifikasi FR-05
-  db.exec(`
-    DELETE FROM alert_logs
-    WHERE id NOT IN (
-      SELECT id FROM alert_logs ORDER BY id DESC LIMIT 100
-    )
-  `);
+    // Hapus log terlama jika jumlahnya melebihi 100 baris sesuai spesifikasi FR-05
+    db.exec(`
+      DELETE FROM alert_logs
+      WHERE id NOT IN (
+        SELECT id FROM alert_logs ORDER BY id DESC LIMIT 100
+      )
+    `);
+  } catch (err) {
+    console.warn('[Alerter] Gagal menyimpan log ke database:', err.message);
+  }
 
   // Kembalikan objek log terbaru untuk dikirim lewat WebSocket ('latest_alert')
   return {
@@ -30,6 +34,7 @@ function saveAlertLog(severity, message) {
 
 // Fungsi utama yang dipanggil setiap 2 detik
 function evaluateAlerts(nodesFromDb, probeResults, systemStats) {
+  if (!Array.isArray(nodesFromDb) || !Array.isArray(probeResults)) return null;
   let latestAlert = null;
 
   // 1. Cek perubahan status setiap node (UP -> DOWN atau DOWN -> UP)
