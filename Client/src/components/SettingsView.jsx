@@ -1,28 +1,103 @@
-import React, { useState } from 'react';
-import { RotateCw, CheckCircle, ExternalLink, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { RotateCw, CheckCircle, ExternalLink, ShieldCheck, Activity, Wifi, Terminal, AlertTriangle, Play, RefreshCw, Check } from 'lucide-react';
+import { getAppSettings, saveAppSettings, resetAppSettings } from '../utils/settings';
 
-export default function SettingsView({ isConnected, system }) {
-  const [backendUrl, setBackendUrl] = useState('http://localhost:8080');
-  const [wsUrl, setWsUrl] = useState('ws://localhost:8080/ws');
-  const [dnsResolver, setDnsResolver] = useState('Cloudflare & Google Public DNS (1.1.1.1 / 8.8.8.8)');
-  const [port, setPort] = useState(53);
-  const [intervalSec, setIntervalSec] = useState(2);
-  const [probeMethod, setProbeMethod] = useState('ICMP / TCP');
+export default function SettingsView({ isConnected, system, nodes = [] }) {
+  const currentSettings = getAppSettings();
+
+  const [backendUrl, setBackendUrl] = useState(currentSettings.backendUrl || 'http://localhost:8080');
+  const [wsUrl, setWsUrl] = useState(currentSettings.wsUrl || 'ws://localhost:8080/ws');
+  const [dnsResolver, setDnsResolver] = useState(currentSettings.dnsResolver || '1.1.1.1');
+  const [port, setPort] = useState(currentSettings.port || 53);
+  const [intervalSec, setIntervalSec] = useState(currentSettings.intervalSec || 2);
+  const [probeMethod, setProbeMethod] = useState(currentSettings.probeMethod || 'ICMP / TCP');
+
   const [isSaved, setIsSaved] = useState(false);
+  const [saveMessage, setSaveMessage] = useState('');
+
+  // State Uji Koneksi Langsung (Test Ping ke Backend)
+  const [isTesting, setIsTesting] = useState(false);
+  const [testResult, setTestResult] = useState(null);
+
+  // Otomatis sinkronkan wsUrl jika backendUrl berubah
+  const handleBackendUrlChange = (val) => {
+    setBackendUrl(val);
+    try {
+      const url = new URL(val);
+      const wsProtocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+      setWsUrl(`${wsProtocol}//${url.host}/ws`);
+    } catch {}
+  };
+
+  const handleTestConnection = async () => {
+    setIsTesting(true);
+    setTestResult(null);
+    const start = performance.now();
+    try {
+      const targetApi = `${backendUrl.trim().replace(/\/$/, '')}/api/nodes`;
+      const res = await fetch(targetApi, { signal: AbortSignal.timeout(3500) });
+      const latency = Math.round(performance.now() - start);
+
+      if (res.ok) {
+        const data = await res.json();
+        setTestResult({
+          success: true,
+          latency,
+          nodesCount: Array.isArray(data) ? data.length : 0,
+          message: `Berhasil terhubung! (${latency} ms · ${Array.isArray(data) ? data.length : 0} node terdaftar)`,
+        });
+      } else {
+        setTestResult({
+          success: false,
+          message: `Server merespons dengan HTTP ${res.status}: ${res.statusText}`,
+        });
+      }
+    } catch (err) {
+      setTestResult({
+        success: false,
+        message: `Koneksi gagal: ${err.message || 'Server offline atau URL salah'}`,
+      });
+    } finally {
+      setIsTesting(false);
+    }
+  };
 
   const handleSave = (e) => {
     e.preventDefault();
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 2500);
+    const newSettings = {
+      backendUrl: backendUrl.trim(),
+      wsUrl: wsUrl.trim(),
+      dnsResolver: dnsResolver.trim(),
+      port: Number(port) || 53,
+      intervalSec: Number(intervalSec) || 2,
+      probeMethod,
+    };
+
+    const ok = saveAppSettings(newSettings);
+    if (ok) {
+      setIsSaved(true);
+      setSaveMessage('Pengaturan berhasil disimpan dan koneksi backend diperbarui!');
+      setTimeout(() => {
+        setIsSaved(false);
+      }, 3500);
+    }
   };
 
   const handleReset = () => {
-    setBackendUrl('http://localhost:8080');
-    setWsUrl('ws://localhost:8080/ws');
-    setDnsResolver('Cloudflare & Google Public DNS (1.1.1.1 / 8.8.8.8)');
-    setPort(53);
-    setIntervalSec(2);
-    setProbeMethod('ICMP / TCP');
+    const def = resetAppSettings();
+    setBackendUrl(def.backendUrl);
+    setWsUrl(def.wsUrl);
+    setDnsResolver(def.dnsResolver);
+    setPort(def.port);
+    setIntervalSec(def.intervalSec);
+    setProbeMethod(def.probeMethod);
+    setTestResult(null);
+
+    setIsSaved(true);
+    setSaveMessage('Pengaturan telah dikembalikan ke default bawaan sistem.');
+    setTimeout(() => {
+      setIsSaved(false);
+    }, 3500);
   };
 
   return (
@@ -59,7 +134,7 @@ export default function SettingsView({ isConnected, system }) {
               System & telemetry
             </h2>
             <p className="text-[12px] text-[#91a4ae] mt-0.5">
-              Konfigurasi integrasi backend dan parameter probe ICMP / TCP.
+              Konfigurasi integrasi backend dan parameter probe ICMP / TCP. Pengaturan disimpan langsung di browser dan diterapkan secara instan.
             </p>
           </div>
 
@@ -74,18 +149,69 @@ export default function SettingsView({ isConnected, system }) {
               </div>
 
               <div className="space-y-4 pl-4 border-l border-[#1f2c35]">
+                {/* Backend URL Input + Test Connection Button */}
                 <div>
-                  <label className="block text-[#91a4ae] font-medium mb-1">
-                    Backend server URL
-                  </label>
-                  <input
-                    type="text"
-                    value={backendUrl}
-                    onChange={(e) => setBackendUrl(e.target.value)}
-                    className="w-full bg-[#152028] border border-[#243139] rounded-[8px] px-3.5 py-2 text-[#edf4f5] font-mono focus:outline-none focus:border-[#5ce4bd]"
-                  />
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[#91a4ae] font-medium">
+                      Backend server URL
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleTestConnection}
+                      disabled={isTesting}
+                      className="text-[11px] text-[#5ce4bd] hover:text-[#4cd4ad] font-medium flex items-center gap-1 disabled:opacity-50"
+                    >
+                      {isTesting ? (
+                        <>
+                          <RefreshCw className="w-3 h-3 animate-spin" />
+                          <span>Menguji koneksi...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Play className="w-3 h-3" />
+                          <span>Uji koneksi backend</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={backendUrl}
+                      onChange={(e) => handleBackendUrlChange(e.target.value)}
+                      placeholder="http://localhost:8080"
+                      className="w-full bg-[#152028] border border-[#243139] rounded-[8px] px-3.5 py-2 text-[#edf4f5] font-mono focus:outline-none focus:border-[#5ce4bd]"
+                    />
+                  </div>
+
+                  {/* Feedback Hasil Test Koneksi Langsung */}
+                  {testResult && (
+                    <div
+                      className={`mt-2 p-2.5 rounded-[8px] border text-[11px] flex items-center justify-between animate-in fade-in duration-150 ${
+                        testResult.success
+                          ? 'bg-[#163229] border-[#214f3f] text-[#5ce4bd]'
+                          : 'bg-[#34231f] border-[#4d2d25] text-[#f29583]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        {testResult.success ? (
+                          <CheckCircle className="w-3.5 h-3.5 shrink-0" />
+                        ) : (
+                          <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                        )}
+                        <span>{testResult.message}</span>
+                      </div>
+                      {testResult.success && (
+                        <span className="font-mono text-[10px] bg-[#111921] px-1.5 py-0.5 rounded">
+                          HTTP OK
+                        </span>
+                      )}
+                    </div>
+                  )}
+
                   <span className="text-[11px] text-[#657d89] mt-1 block">
-                    Endpoint API utama untuk data monitoring server.
+                    Endpoint API utama untuk data monitoring server. Bisa mengarah ke localhost atau IP server remote (misal: <code>http://192.168.1.100:8080</code>).
                   </span>
                 </div>
 
@@ -97,10 +223,11 @@ export default function SettingsView({ isConnected, system }) {
                     type="text"
                     value={wsUrl}
                     onChange={(e) => setWsUrl(e.target.value)}
+                    placeholder="ws://localhost:8080/ws"
                     className="w-full bg-[#152028] border border-[#243139] rounded-[8px] px-3.5 py-2 text-[#edf4f5] font-mono focus:outline-none focus:border-[#5ce4bd]"
                   />
                   <span className="text-[11px] text-[#657d89] mt-1 block">
-                    Koneksi streaming untuk pembaruan metrik secara langsung.
+                    Koneksi streaming untuk pembaruan metrik real-time interval 2 detik.
                   </span>
                 </div>
               </div>
@@ -125,10 +252,11 @@ export default function SettingsView({ isConnected, system }) {
                       type="text"
                       value={dnsResolver}
                       onChange={(e) => setDnsResolver(e.target.value)}
-                      className="w-full bg-[#152028] border border-[#243139] rounded-[8px] px-3.5 py-2 text-[#edf4f5] focus:outline-none focus:border-[#5ce4bd]"
+                      placeholder="1.1.1.1 atau 8.8.8.8"
+                      className="w-full bg-[#152028] border border-[#243139] rounded-[8px] px-3.5 py-2 text-[#edf4f5] focus:outline-none focus:border-[#5ce4bd] font-mono"
                     />
                     <span className="text-[11px] text-[#657d89] mt-1 block">
-                      DNS upstream publik atau resolver lokal (port 53).
+                      DNS upstream publik (1.1.1.1, 8.8.8.8) atau resolver lokal BIND9 (port 53).
                     </span>
                   </div>
 
@@ -153,6 +281,8 @@ export default function SettingsView({ isConnected, system }) {
                     <div className="relative">
                       <input
                         type="number"
+                        min="1"
+                        max="60"
                         value={intervalSec}
                         onChange={(e) => setIntervalSec(Number(e.target.value))}
                         className="w-full bg-[#152028] border border-[#243139] rounded-[8px] px-3.5 py-2 text-[#edf4f5] font-mono focus:outline-none focus:border-[#5ce4bd]"
@@ -162,7 +292,7 @@ export default function SettingsView({ isConnected, system }) {
                       </span>
                     </div>
                     <span className="text-[11px] text-[#657d89] mt-1 block">
-                      Interval yang lebih singkat meningkatkan frekuensi pengambilan data.
+                      Interval broadcast telemetri WebSocket (standar: 2 detik).
                     </span>
                   </div>
 
@@ -175,9 +305,9 @@ export default function SettingsView({ isConnected, system }) {
                       onChange={(e) => setProbeMethod(e.target.value)}
                       className="w-full bg-[#152028] border border-[#243139] rounded-[8px] px-3.5 py-2 text-[#edf4f5] focus:outline-none focus:border-[#5ce4bd]"
                     >
-                      <option value="ICMP / TCP">ICMP / TCP</option>
-                      <option value="ICMP Only">ICMP Only</option>
-                      <option value="TCP Only">TCP Only</option>
+                      <option value="ICMP / TCP">ICMP / TCP (Hybrid)</option>
+                      <option value="ICMP Only">ICMP Only (Ping)</option>
+                      <option value="TCP Only">TCP Only (Socket)</option>
                     </select>
                   </div>
                 </div>
@@ -185,18 +315,25 @@ export default function SettingsView({ isConnected, system }) {
             </div>
 
             {/* Bottom Actions */}
-            <div className="flex items-center justify-between pt-5 border-t border-[#1b262e]">
+            <div className="flex flex-col sm:flex-row items-center justify-between pt-5 border-t border-[#1b262e] gap-3">
               <span className="text-[11px] text-[#657d89]">
-                {isSaved ? 'Perubahan berhasil disimpan!' : 'Perubahan diterapkan setelah disimpan.'}
+                {isSaved ? (
+                  <span className="text-[#5ce4bd] font-medium flex items-center gap-1.5 animate-in fade-in">
+                    <Check className="w-3.5 h-3.5" />
+                    {saveMessage || 'Perubahan berhasil disimpan!'}
+                  </span>
+                ) : (
+                  'Perubahan disimpan ke browser dan langsung diterapkan ke koneksi aktif.'
+                )}
               </span>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={handleReset}
                   className="px-4 py-2 bg-[#172127] hover:bg-[#1f2c35] text-[#edf4f5] font-medium rounded-[8px] transition"
                 >
-                  Reset
+                  Reset default
                 </button>
                 <button
                   type="submit"
@@ -224,7 +361,7 @@ export default function SettingsView({ isConnected, system }) {
               <div className="flex items-center justify-between py-1.5 border-b border-[#1b262e]">
                 <span className="text-[#91a4ae]">Backend server</span>
                 <span className="text-[#5ce4bd] font-medium flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#5ce4bd]" />
+                  <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-[#5ce4bd] animate-pulse' : 'bg-[#f29583]'}`} />
                   {isConnected ? 'Online' : 'Offline'}
                 </span>
               </div>
@@ -232,20 +369,36 @@ export default function SettingsView({ isConnected, system }) {
               <div className="flex items-center justify-between py-1.5 border-b border-[#1b262e]">
                 <span className="text-[#91a4ae]">WebSocket stream</span>
                 <span className="text-[#5ce4bd] font-medium flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#5ce4bd]" />
+                  <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-[#5ce4bd]' : 'bg-[#f29583]'}`} />
                   {isConnected ? 'Connected' : 'Disconnected'}
                 </span>
               </div>
 
               <div className="flex items-center justify-between py-1.5 border-b border-[#1b262e]">
                 <span className="text-[#91a4ae]">Sistem operasi</span>
-                <span className="text-[#edf4f5] font-mono text-[11px]">{system?.os_distro || 'Host Server'}</span>
+                <span className="text-[#edf4f5] font-mono text-[11px]">
+                  {system?.os_distro || 'Host Server'}
+                </span>
               </div>
 
-              <div className="flex items-center justify-between py-1.5">
+              <div className="flex items-center justify-between py-1.5 border-b border-[#1b262e]">
                 <span className="text-[#91a4ae]">Hostname</span>
                 <span className="text-[#edf4f5] font-mono text-[11px] truncate max-w-[150px]" title={system?.os_hostname}>
                   {system?.os_hostname || 'localhost'}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between py-1.5 border-b border-[#1b262e]">
+                <span className="text-[#91a4ae]">Arsitektur / Core</span>
+                <span className="text-[#edf4f5] font-mono text-[11px]">
+                  {system?.os_arch ? `${system.os_arch} · ${system.cpu_cores || 1} Cores` : 'x64'}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between py-1.5">
+                <span className="text-[#91a4ae]">Node terdaftar</span>
+                <span className="text-[#5ce4bd] font-mono text-[11px] font-semibold">
+                  {nodes.length} perangkat aktif
                 </span>
               </div>
             </div>
@@ -267,7 +420,7 @@ export default function SettingsView({ isConnected, system }) {
                 </span>
                 <div>
                   <div className="text-[12px] font-semibold text-[#edf4f5]">Network devices</div>
-                  <div className="text-[10px] text-[#91a4ae]">Probe ICMP & TCP</div>
+                  <div className="text-[10px] text-[#91a4ae]">Probe ICMP & TCP ({probeMethod})</div>
                 </div>
               </div>
 
@@ -277,7 +430,9 @@ export default function SettingsView({ isConnected, system }) {
                 </span>
                 <div>
                   <div className="text-[12px] font-semibold text-[#edf4f5]">Node.js backend</div>
-                  <div className="text-[10px] text-[#91a4ae]">localhost:8080</div>
+                  <div className="text-[10px] text-[#91a4ae] font-mono truncate max-w-[200px]" title={backendUrl}>
+                    {backendUrl.replace(/^https?:\/\//, '')}
+                  </div>
                 </div>
               </div>
 
@@ -287,7 +442,7 @@ export default function SettingsView({ isConnected, system }) {
                 </span>
                 <div>
                   <div className="text-[12px] font-semibold text-[#edf4f5]">PingKu dashboard</div>
-                  <div className="text-[10px] text-[#91a4ae]">WebSocket · setiap 2 detik</div>
+                  <div className="text-[10px] text-[#91a4ae]">WebSocket · setiap {intervalSec} detik</div>
                 </div>
               </div>
             </div>
@@ -299,15 +454,16 @@ export default function SettingsView({ isConnected, system }) {
               Monitoring yang tetap terhubung.
             </h4>
             <p className="text-[11px] text-[#91a4ae] leading-relaxed mb-3">
-              Pastikan backend Node.js aktif dan URL WebSocket dapat dijangkau sebelum mengubah konfigurasi koneksi.
+              Gunakan tombol "Uji koneksi backend" untuk memverifikasi apakah endpoint API dapat diakses sebelum menyimpan perubahan.
             </p>
-            <a
-              href="#docs"
+            <button
+              type="button"
+              onClick={handleTestConnection}
               className="text-[11px] font-medium text-[#5ce4bd] hover:underline flex items-center gap-1"
             >
-              <span>Lihat panduan konfigurasi</span>
+              <span>Tes latensi server sekarang</span>
               <ExternalLink className="w-3 h-3" />
-            </a>
+            </button>
           </div>
         </div>
       </div>

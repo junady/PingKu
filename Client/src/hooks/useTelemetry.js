@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-
-const API_BASE = 'http://localhost:8080/api';
-const WS_URL = 'ws://localhost:8080/ws';
+import { getAppSettings } from '../utils/settings';
 
 export function useTelemetry() {
+  const [settings, setSettings] = useState(getAppSettings);
   const [isConnected, setIsConnected] = useState(false);
+
+  // URL dinamis dari pengaturan (disimpan di localStorage)
+  const apiBase = `${(settings.backendUrl || 'http://localhost:8080').replace(/\/$/, '')}/api`;
+  const wsUrl = settings.wsUrl || 'ws://localhost:8080/ws';
 
   // State utama telemetri sistem (FR-01)
   const [system, setSystem] = useState({
@@ -31,12 +34,23 @@ export function useTelemetry() {
     });
   }, []);
 
+  // Dengarkan perubahan konfigurasi dari SettingsView
+  useEffect(() => {
+    const handleSettingsChanged = (e) => {
+      if (e.detail) {
+        setSettings(e.detail);
+      }
+    };
+    window.addEventListener('pingku_settings_changed', handleSettingsChanged);
+    return () => window.removeEventListener('pingku_settings_changed', handleSettingsChanged);
+  }, []);
+
   // 1. Ambil data awal dari REST API backend
   const fetchInitialData = useCallback(async () => {
     try {
       const [nodesRes, logsRes] = await Promise.all([
-        fetch(`${API_BASE}/nodes`),
-        fetch(`${API_BASE}/logs`),
+        fetch(`${apiBase}/nodes`),
+        fetch(`${apiBase}/logs`),
       ]);
 
       if (nodesRes.ok) {
@@ -58,26 +72,34 @@ export function useTelemetry() {
         setLogs(logsData);
       }
     } catch (err) {
-      console.warn('[PingKu] Menunggu backend server di http://localhost:8080...', err.message);
+      console.warn(`[PingKu] Menunggu backend server di ${apiBase}...`, err.message);
     }
-  }, []);
+  }, [apiBase]);
 
-  // 2. Koneksi Live WebSocket ke ws://localhost:8080/ws
+  // 2. Koneksi Live WebSocket ke endpoint aktif
   useEffect(() => {
     fetchInitialData();
     let reconnectTimer;
+    let isMounted = true;
 
     function connectWs() {
+      if (!isMounted) return;
       try {
-        const ws = new WebSocket(WS_URL);
+        if (wsRef.current) {
+          try { wsRef.current.close(); } catch {}
+        }
+
+        const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 
         ws.onopen = () => {
+          if (!isMounted) return;
           setIsConnected(true);
-          console.log('[PingKu] WebSocket connected ke backend live.');
+          console.log(`[PingKu] WebSocket connected ke ${wsUrl}`);
         };
 
         ws.onmessage = (event) => {
+          if (!isMounted) return;
           try {
             const data = JSON.parse(event.data);
 
@@ -110,15 +132,18 @@ export function useTelemetry() {
         };
 
         ws.onclose = () => {
+          if (!isMounted) return;
           setIsConnected(false);
           reconnectTimer = setTimeout(connectWs, 2000);
         };
 
         ws.onerror = () => {
+          if (!isMounted) return;
           setIsConnected(false);
-          ws.close();
+          try { ws.close(); } catch {}
         };
       } catch {
+        if (!isMounted) return;
         setIsConnected(false);
         reconnectTimer = setTimeout(connectWs, 2000);
       }
@@ -127,15 +152,18 @@ export function useTelemetry() {
     connectWs();
 
     return () => {
+      isMounted = false;
       clearTimeout(reconnectTimer);
-      if (wsRef.current) wsRef.current.close();
+      if (wsRef.current) {
+        try { wsRef.current.close(); } catch {}
+      }
     };
-  }, [fetchInitialData, appendHistory]);
+  }, [wsUrl, fetchInitialData, appendHistory]);
 
   // 3. Aksi CRUD Node untuk TopologyMap
   const addNode = async (newNodeData) => {
     try {
-      const res = await fetch(`${API_BASE}/nodes`, {
+      const res = await fetch(`${apiBase}/nodes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newNodeData),
@@ -156,7 +184,7 @@ export function useTelemetry() {
     );
 
     try {
-      await fetch(`${API_BASE}/nodes/${id}`, {
+      await fetch(`${apiBase}/nodes/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedFields),
@@ -183,7 +211,7 @@ export function useTelemetry() {
     );
 
     try {
-      await fetch(`${API_BASE}/nodes/${id}`, {
+      await fetch(`${apiBase}/nodes/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pos_x, pos_y }),
@@ -201,7 +229,7 @@ export function useTelemetry() {
     );
 
     try {
-      await fetch(`${API_BASE}/nodes/${id}`, { method: 'DELETE' });
+      await fetch(`${apiBase}/nodes/${id}`, { method: 'DELETE' });
     } catch (err) {
       console.error('Gagal menghapus node:', err);
     }
@@ -209,7 +237,7 @@ export function useTelemetry() {
 
   const pingNode = async (id) => {
     try {
-      const res = await fetch(`${API_BASE}/nodes/${id}/ping`, { method: 'POST' });
+      const res = await fetch(`${apiBase}/nodes/${id}/ping`, { method: 'POST' });
       if (res.ok) {
         const result = await res.json();
         setNodes((prev) =>

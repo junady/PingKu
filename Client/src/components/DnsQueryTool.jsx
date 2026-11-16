@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Loader2, Globe, Shield, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { getAppSettings } from '../utils/settings';
 
 const DNS_TYPE_NAMES = {
   1: 'A',
@@ -43,14 +44,18 @@ async function queryDoh(domain, type = 'A') {
   return null;
 }
 
-export default function DnsQueryTool() {
-  const [domain, setDomain] = useState('google.com');
+export default function DnsQueryTool({ initialDomain = 'google.com' }) {
+  const [domain, setDomain] = useState(initialDomain || 'google.com');
   const [resolver, setResolver] = useState('auto');
   const [isLoading, setIsLoading] = useState(false);
   const [statusText, setStatusText] = useState('');
   const [queriedDomain, setQueriedDomain] = useState('');
   const [records, setRecords] = useState([]);
   const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    if (initialDomain) setDomain(initialDomain);
+  }, [initialDomain]);
 
   // Port checks untuk domain yang dicari
   const [portChecks, setPortChecks] = useState([]);
@@ -73,8 +78,9 @@ export default function DnsQueryTool() {
     // 1. Jika resolver adalah Local BIND9 (192.168.10.1): query backend
     if (resolver === '192.168.10.1' || resolver === '127.0.0.1') {
       try {
+        const backendUrl = getAppSettings().backendUrl || 'http://localhost:8080';
         const res = await fetch(
-          `http://localhost:8080/api/dns?domain=${encodeURIComponent(target)}&resolver=${encodeURIComponent(resolver)}`
+          `${backendUrl.replace(/\/$/, '')}/api/dns?domain=${encodeURIComponent(target)}&resolver=${encodeURIComponent(resolver)}`
         );
         if (res.ok) {
           const data = await res.json();
@@ -184,7 +190,8 @@ export default function DnsQueryTool() {
     const testPorts = [80, 443, 53, 22];
 
     try {
-      const res = await fetch('http://localhost:8080/api/port-scan', {
+      const backendUrl = getAppSettings().backendUrl || 'http://localhost:8080';
+      const res = await fetch(`${backendUrl.replace(/\/$/, '')}/api/port-scan`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ host: targetIp, ports: testPorts }),

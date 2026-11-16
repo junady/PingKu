@@ -1,12 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Compass, Search, Globe2, MapPin, Building, ShieldCheck, Loader2, Server } from 'lucide-react';
 
-export default function IpGeoTool() {
-  const [target, setTarget] = useState('1.1.1.1');
+export default function IpGeoTool({ initialIp = '1.1.1.1' }) {
+  const [target, setTarget] = useState(initialIp || '1.1.1.1');
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [latencyMs, setLatencyMs] = useState(null);
+
+  useEffect(() => {
+    if (initialIp) setTarget(initialIp);
+  }, [initialIp]);
 
   const handleLookup = useCallback(async (overrideTarget) => {
     const query = (overrideTarget || target).trim();

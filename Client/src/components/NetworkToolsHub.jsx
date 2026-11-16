@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Radio, Shield, Globe, RotateCw, LayoutGrid, Compass } from 'lucide-react';
 import LivePingTool from './LivePingTool';
 import PortScannerTool from './PortScannerTool';
@@ -6,8 +6,12 @@ import DnsQueryTool from './DnsQueryTool';
 import VlsmCalculator from './VlsmCalculator';
 import IpGeoTool from './IpGeoTool';
 
-export default function NetworkToolsHub() {
-  const [activeSubTab, setActiveSubTab] = useState('suite');
+export default function NetworkToolsHub({ initialSubTab = 'suite', initialTarget = '' }) {
+  const [activeSubTab, setActiveSubTab] = useState(initialSubTab || 'suite');
+
+  useEffect(() => {
+    if (initialSubTab) setActiveSubTab(initialSubTab);
+  }, [initialSubTab]);
 
   const tools = [
     { id: 'suite', label: 'DNS & VLSM Suite', icon: Globe },
@@ -74,7 +78,7 @@ export default function NetworkToolsHub() {
       {/* TAB 1: SUITE (DNS & VLSM) */}
       {activeSubTab === 'suite' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-          <DnsQueryTool />
+          <DnsQueryTool initialDomain={initialTarget} />
           <VlsmCalculator />
         </div>
       )}
@@ -82,21 +86,21 @@ export default function NetworkToolsHub() {
       {/* TAB 2: LIVE PING MONITOR */}
       {activeSubTab === 'ping' && (
         <div className="max-w-4xl mx-auto">
-          <LivePingTool />
+          <LivePingTool initialHost={initialTarget} />
         </div>
       )}
 
       {/* TAB 3: TCP PORT SCANNER */}
       {activeSubTab === 'ports' && (
         <div className="max-w-4xl mx-auto">
-          <PortScannerTool />
+          <PortScannerTool initialHost={initialTarget} />
         </div>
       )}
 
       {/* TAB 4: IP & ASN GEOLOCATION LOOKUP */}
       {activeSubTab === 'geo' && (
         <div className="max-w-4xl mx-auto">
-          <IpGeoTool />
+          <IpGeoTool initialIp={initialTarget} />
         </div>
       )}
 
@@ -104,15 +108,15 @@ export default function NetworkToolsHub() {
       {activeSubTab === 'all' && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-            <DnsQueryTool />
+            <DnsQueryTool initialDomain={initialTarget} />
             <VlsmCalculator />
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-            <LivePingTool />
-            <PortScannerTool />
+            <LivePingTool initialHost={initialTarget} />
+            <PortScannerTool initialHost={initialTarget} />
           </div>
           <div className="max-w-4xl mx-auto">
-            <IpGeoTool />
+            <IpGeoTool initialIp={initialTarget} />
           </div>
         </div>
       )}

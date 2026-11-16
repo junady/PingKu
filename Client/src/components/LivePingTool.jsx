@@ -1,8 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Square, RefreshCw, Radio } from 'lucide-react';
+import { getAppSettings } from '../utils/settings';
 
-export default function LivePingTool() {
-  const [host, setHost] = useState('127.0.0.1');
+export default function LivePingTool({ initialHost = '127.0.0.1' }) {
+  const [host, setHost] = useState(initialHost || '127.0.0.1');
+
+  useEffect(() => {
+    if (initialHost) setHost(initialHost);
+  }, [initialHost]);
   const [isPinging, setIsPinging] = useState(false);
   const [pingIntervalMs, setPingIntervalMs] = useState(1000);
   const [pingHistory, setPingHistory] = useState([]);
@@ -46,7 +51,8 @@ export default function LivePingTool() {
     const startTime = performance.now();
 
     try {
-      const res = await fetch(`http://localhost:8080/api/ping?host=${encodeURIComponent(host)}`);
+      const backendUrl = getAppSettings().backendUrl || 'http://localhost:8080';
+      const res = await fetch(`${backendUrl.replace(/\/$/, '')}/api/ping?host=${encodeURIComponent(host)}`);
       if (res.ok) {
         const data = await res.json();
         const record = {

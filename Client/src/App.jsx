@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   LayoutDashboard,
   Share2,
@@ -22,6 +22,7 @@ import TopologyMap from './components/TopologyMap';
 import NetworkToolsHub from './components/NetworkToolsHub';
 import ConnectionLogsView from './components/ConnectionLogsView';
 import SettingsView from './components/SettingsView';
+import GlobalSearchPalette from './components/GlobalSearchPalette';
 
 export default function App() {
   const {
@@ -39,6 +40,10 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState('overview');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [toolsInitialSubTab, setToolsInitialSubTab] = useState('suite');
+  const [toolsInitialTarget, setToolsInitialTarget] = useState('');
+  const searchInputRef = useRef(null);
 
   const menuItems = [
     {
@@ -199,19 +204,56 @@ export default function App() {
 
           {/* Action Header Kanan */}
           <div className="flex items-center gap-3">
-            {/* Search Input Box dengan Keyboard Shortcut Badge */}
-            <div className="relative hidden md:flex items-center bg-[#152028] border border-[#243139] hover:border-[#2e3e48] rounded-[8px] px-3 py-1.5 w-64 text-xs text-[#edf4f5] transition-colors">
+            {/* Search Input Box dengan Keyboard Shortcut Badge & Palette */}
+            <div className="relative hidden md:flex items-center bg-[#152028] border border-[#243139] hover:border-[#2e3e48] rounded-[8px] px-3 py-1.5 w-64 text-xs text-[#edf4f5] transition-colors focus-within:border-[#5ce4bd]">
               <Search className="w-3.5 h-3.5 text-[#91a4ae] mr-2 shrink-0" />
               <input
+                ref={searchInputRef}
                 type="text"
                 placeholder="Cari host, IP, atau event..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setIsSearchOpen(true)}
+                onClick={() => setIsSearchOpen(true)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setIsSearchOpen(true);
+                }}
                 className="bg-transparent border-none outline-none text-[#edf4f5] placeholder-[#657d89] w-full text-xs"
               />
-              <kbd className="text-[10px] font-mono bg-[#1a2530] text-[#91a4ae] px-1.5 py-0.5 rounded border border-[#2e3e48] shrink-0 ml-1">
+              <kbd
+                onClick={() => {
+                  setIsSearchOpen((prev) => !prev);
+                  if (!isSearchOpen) searchInputRef.current?.focus();
+                }}
+                className="text-[10px] font-mono bg-[#1a2530] text-[#91a4ae] hover:text-[#edf4f5] px-1.5 py-0.5 rounded border border-[#2e3e48] shrink-0 ml-1 cursor-pointer transition"
+                title="Tekan Ctrl+K atau Cmd+K untuk mencari"
+              >
                 ⌘ K
               </kbd>
+
+              {/* Floating Global Search Palette */}
+              <GlobalSearchPalette
+                isOpen={isSearchOpen}
+                setIsOpen={setIsSearchOpen}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                nodes={nodes}
+                logs={logs}
+                onNavigateTab={(tabId) => {
+                  setActiveTab(tabId);
+                  setIsSearchOpen(false);
+                }}
+                onSelectNode={(node) => {
+                  setActiveTab('topology');
+                  setIsSearchOpen(false);
+                }}
+                onQuickDiagnostic={(toolType, target) => {
+                  setToolsInitialSubTab(toolType === 'dns' ? 'suite' : toolType);
+                  setToolsInitialTarget(target);
+                  setActiveTab('tools');
+                  setIsSearchOpen(false);
+                }}
+              />
             </div>
 
             {/* Live Telemetry Indicator Badge */}
@@ -318,13 +360,24 @@ export default function App() {
           )}
 
           {/* TAB 3: NETWORK TOOLS SUITE */}
-          {activeTab === 'tools' && <NetworkToolsHub />}
+          {activeTab === 'tools' && (
+            <NetworkToolsHub
+              initialSubTab={toolsInitialSubTab}
+              initialTarget={toolsInitialTarget}
+            />
+          )}
 
           {/* TAB 4: CONNECTION LOGS */}
           {activeTab === 'logs' && <ConnectionLogsView logs={logs} />}
 
           {/* TAB 5: SETTINGS */}
-          {activeTab === 'settings' && <SettingsView isConnected={isConnected} system={system} />}
+          {activeTab === 'settings' && (
+            <SettingsView
+              isConnected={isConnected}
+              system={system}
+              nodes={nodes}
+            />
+          )}
         </main>
       </div>
     </div>

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Shield, Play, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { getAppSettings } from '../utils/settings';
 
 const PRESETS = [
   {
@@ -36,14 +37,18 @@ const COMMON_SERVICES = {
   9000: 'Portainer / Container',
 };
 
-export default function PortScannerTool() {
-  const [host, setHost] = useState('127.0.0.1');
+export default function PortScannerTool({ initialHost = '127.0.0.1' }) {
+  const [host, setHost] = useState(initialHost || '127.0.0.1');
   const [selectedPreset, setSelectedPreset] = useState(0);
   const [customPortsInput, setCustomPortsInput] = useState('');
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
   const [results, setResults] = useState([]);
   const [hasScanned, setHasScanned] = useState(false);
+
+  useEffect(() => {
+    if (initialHost) setHost(initialHost);
+  }, [initialHost]);
 
   const getPortsToScan = () => {
     if (customPortsInput.trim()) {
@@ -67,7 +72,8 @@ export default function PortScannerTool() {
 
     try {
       setScanProgress(30);
-      const res = await fetch('http://localhost:8080/api/port-scan', {
+      const backendUrl = getAppSettings().backendUrl || 'http://localhost:8080';
+      const res = await fetch(`${backendUrl.replace(/\/$/, '')}/api/port-scan`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ host: host.trim(), ports }),
