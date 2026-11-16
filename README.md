@@ -7,6 +7,7 @@
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![TailwindCSS v4](https://img.shields.io/badge/TailwindCSS-v4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
 ![SQLite](https://img.shields.io/badge/SQLite-better--sqlite3-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
+![License](https://img.shields.io/badge/License-AGPL%20v3-3b82f6?style=for-the-badge)
 
 **Lightweight real-time NOC dashboard and network diagnostic suite designed for Linux servers (Debian 12), homelabs, and network engineers.**
 
@@ -270,5 +271,7 @@ Untuk menguji kemampuan pemantauan di lingkungan homelab/jaringan nyata:
 
 ---
 
-## 📄 Lisensi
-Proyek ini dibuat untuk kebutuhan pembelajaran, portofolio sistem administrasi jaringan, dan demonstrasi monitoring infrastruktur TI.
+## 📄 Lisensi (License)
+
+Proyek ini dilisensikan di bawah ketentuan **GNU Affero General Public License v3.0 (AGPL-3.0)**.  
+Lihat berkas [`LICENSE`](file:///d:/Juna%20Task/PingKu/LICENSE) untuk rincian lengkap mengenai hak penggunaan, distribusi, dan modifikasi kode sumber terbuka.

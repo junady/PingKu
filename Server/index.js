@@ -14,6 +14,9 @@ const { executeAutoDiscovery, syncDiscoveryToDatabase } = require('./discovery')
 
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 8080;
+const HOST = process.env.HOST || '0.0.0.0';
+const DEFAULT_RESOLVER = process.env.DEFAULT_RESOLVER || '1.1.1.1';
+const POLL_INTERVAL_MS = process.env.POLL_INTERVAL_MS ? parseInt(process.env.POLL_INTERVAL_MS, 10) : 2000;
 
 app.use(cors());
 app.use(express.json());
@@ -344,7 +347,7 @@ async function broadcastTelemetry() {
   }
 }
 
-setInterval(broadcastTelemetry, 2000);
+setInterval(broadcastTelemetry, POLL_INTERVAL_MS);
 
 // ==========================================
 // 6. Sajikan Frontend Production Build (Client/dist)
@@ -381,7 +384,7 @@ server.on('error', (err) => {
   }
 });
 
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server PingKu (HTTP & WebSocket) berjalan di http://localhost:${PORT}`);
-  console.log(`Endpoint WebSocket siap di ws://localhost:${PORT}/ws`);
+server.listen(PORT, HOST, () => {
+  console.log(`Server PingKu (HTTP & WebSocket) berjalan di http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`);
+  console.log(`Endpoint WebSocket siap di ws://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}/ws`);
 });
