@@ -1,0 +1,182 @@
+[
+  {
+    "id": "gw-core",
+    "label": "Router Gateway (MikroTik CCR2004)",
+    "type": "router",
+    "ip_address": "10.0.0.1",
+    "port": 8291,
+    "parent_id": null,
+    "pos_x": 60,
+    "pos_y": 580
+  },
+  {
+    "id": "sw-core",
+    "label": "Core Switch L3 (Cisco Catalyst 3850)",
+    "type": "switch",
+    "ip_address": "10.0.0.2",
+    "port": 22,
+    "parent_id": "gw-core",
+    "pos_x": 370,
+    "pos_y": 720
+  },
+  {
+    "id": "srv-cbt-main",
+    "label": "Server Utama CBT / ANBK",
+    "type": "server",
+    "ip_address": "10.0.10.10",
+    "port": 80,
+    "parent_id": "sw-server",
+    "pos_x": 680,
+    "pos_y": 80
+  },
+  {
+    "id": "sw-server",
+    "label": "Switch Distribusi Server Farm",
+    "type": "switch",
+    "ip_address": "10.0.0.3",
+    "port": 22,
+    "parent_id": "sw-core",
+    "pos_x": 680,
+    "pos_y": 220
+  },
+  {
+    "id": "srv-moodle",
+    "label": "Server E-Learning Moodle (LMS)",
+    "type": "server",
+    "ip_address": "10.0.10.15",
+    "port": 443,
+    "parent_id": "sw-server",
+    "pos_x": 680,
+    "pos_y": 360
+  },
+  {
+    "id": "sw-lab-cbt",
+    "label": "Switch Distribusi Lab CBT",
+    "type": "switch",
+    "ip_address": "10.0.0.4",
+    "port": 22,
+    "parent_id": "sw-core",
+    "pos_x": 680,
+    "pos_y": 680
+  },
+  {
+    "id": "sw-kantor",
+    "label": "Switch Distribusi Kantor & TU",
+    "type": "switch",
+    "ip_address": "10.0.0.5",
+    "port": 22,
+    "parent_id": "sw-core",
+    "pos_x": 680,
+    "pos_y": 870
+  },
+  {
+    "id": "srv-cbt-backup",
+    "label": "Server CBT Cadangan (Replica)",
+    "type": "server",
+    "ip_address": "10.0.10.11",
+    "port": 80,
+    "parent_id": "sw-server",
+    "pos_x": 990,
+    "pos_y": 80
+  },
+  {
+    "id": "srv-siakad",
+    "label": "Server Database SIAKAD (MySQL)",
+    "type": "server",
+    "ip_address": "10.0.10.20",
+    "port": 3306,
+    "parent_id": "sw-server",
+    "pos_x": 990,
+    "pos_y": 180
+  },
+  {
+    "id": "srv-slims",
+    "label": "Server Perpustakaan (SLiMS)",
+    "type": "server",
+    "ip_address": "10.0.10.25",
+    "port": 8080,
+    "parent_id": "sw-server",
+    "pos_x": 990,
+    "pos_y": 280
+  },
+  {
+    "id": "srv-web-school",
+    "label": "Server Web Profil Sekolah",
+    "type": "server",
+    "ip_address": "10.0.10.35",
+    "port": 443,
+    "parent_id": "sw-server",
+    "pos_x": 990,
+    "pos_y": 380
+  },
+  {
+    "id": "nas-backup-storage",
+    "label": "Storage NAS & Backup (TrueNAS)",
+    "type": "server",
+    "ip_address": "10.0.10.30",
+    "port": 5000,
+    "parent_id": "sw-server",
+    "pos_x": 990,
+    "pos_y": 480
+  },
+  {
+    "id": "srv-cctv-nvr",
+    "label": "Server CCTV NVR (32 Channel)",
+    "type": "server",
+    "ip_address": "10.0.10.40",
+    "port": 8000,
+    "parent_id": "sw-server",
+    "pos_x": 990,
+    "pos_y": 580
+  },
+  {
+    "id": "srv-proktor-lab1",
+    "label": "PC Proktor Lab Komputer 1",
+    "type": "client",
+    "ip_address": "10.0.20.10",
+    "port": 3389,
+    "parent_id": "sw-lab-cbt",
+    "pos_x": 990,
+    "pos_y": 680
+  },
+  {
+    "id": "ap-lab-komputer",
+    "label": "Access Point Wi-Fi Lab TIK",
+    "type": "router",
+    "ip_address": "10.0.20.2",
+    "port": 80,
+    "parent_id": "sw-lab-cbt",
+    "pos_x": 990,
+    "pos_y": 775
+  },
+  {
+    "id": "srv-dapodik-tu",
+    "label": "PC Operator Dapodik & TU",
+    "type": "client",
+    "ip_address": "10.0.40.10",
+    "port": 80,
+    "parent_id": "sw-kantor",
+    "pos_x": 990,
+    "pos_y": 870
+  },
+  {
+    "id": "ap-ruang-guru",
+    "label": "Access Point Wi-Fi Ruang Guru",
+    "type": "router",
+    "ip_address": "10.0.40.1",
+    "port": 80,
+    "parent_id": "sw-kantor",
+    "pos_x": 990,
+    "pos_y": 965
+  },
+  {
+    "id": "srv-radius-hotspot",
+    "label": "Server Radius & Hotspot",
+    "type": "server",
+    "ip_address": "10.0.10.5",
+    "port": 1812,
+    "parent_id": "sw-server",
+    "pos_x": 1300,
+    "pos_y": 330
+  }
+]

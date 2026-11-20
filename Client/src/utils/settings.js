@@ -1,8 +1,14 @@
 // Utilitas manajemen konfigurasi aplikasi PingKu dengan persistensi localStorage
 
+export function isVercelOrPublicDeployment() {
+  if (typeof window === 'undefined') return false;
+  const host = window.location.hostname;
+  return host.includes('vercel.app') || host.includes('netlify.app') || host.includes('github.io') || (window.location.port === '' && host !== 'localhost');
+}
+
 export const DEFAULT_SETTINGS = {
-  backendUrl: 'http://localhost:8080',
-  wsUrl: 'ws://localhost:8080/ws',
+  backendUrl: isVercelOrPublicDeployment() ? '' : 'http://localhost:8080',
+  wsUrl: isVercelOrPublicDeployment() ? '' : 'ws://localhost:8080/ws',
   dnsResolver: '1.1.1.1',
   port: 53,
   intervalSec: 2,
@@ -17,6 +23,10 @@ export function getAppSettings() {
     const raw = localStorage.getItem(SETTINGS_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
+      // Jika di Vercel tapi localStorage menyimpan localhost:8080, otomatis sesuaikan ke relative path
+      if (isVercelOrPublicDeployment() && parsed.backendUrl === 'http://localhost:8080') {
+        parsed.backendUrl = '';
+      }
       return { ...DEFAULT_SETTINGS, ...parsed };
     }
   } catch (err) {

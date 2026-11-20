@@ -20,6 +20,7 @@ import {
   Edit2,
   Trash2,
   RefreshCw,
+  RotateCw,
   ExternalLink,
   Activity,
   AlertTriangle,
@@ -27,6 +28,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { getAppSettings } from '../utils/settings';
+import { SCHOOL_TOPOLOGY_NODES } from '../data/schoolTopologyData';
 
 // ==========================================
 // 1. CUSTOM NODE (Sesuai Desain Figma Dark NOC)
@@ -55,7 +57,7 @@ const DeviceNode = ({ id, data, selected }) => {
         e.stopPropagation();
         if (data.onSelect) data.onSelect();
       }}
-      className={`bg-[#152028] border rounded-[10px] p-3.5 min-w-[200px] shadow-lg cursor-pointer transition-all duration-200 select-none ${
+      className={`bg-[#152028] border rounded-[10px] p-3 w-[215px] max-w-[215px] shadow-lg cursor-pointer transition-all duration-200 select-none ${
         selected
           ? 'border-[#5ce4bd] ring-2 ring-[#5ce4bd]/20 shadow-[0_0_15px_rgba(92,228,189,0.15)]'
           : isDown
@@ -110,6 +112,8 @@ const DeviceNode = ({ id, data, selected }) => {
 // 2. KOMPONEN UTAMA TOPOLOGY MAP
 // ==========================================
 export default function TopologyMap({
+  selectedNodeId: selectedNodeIdProp = null,
+  onSelectNode: onSelectNodeProp = null,
   nodes: rawNodes = [],
   onAddNode,
   onUpdateNode,
@@ -119,9 +123,102 @@ export default function TopologyMap({
   onNavigateToLogs,
   onRefreshNodes,
 }) {
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const [selectedNodeId, setSelectedNodeId] = useState(null);
+  const [nodes, setNodes, onNodesChange] = useNodesState(() => {
+    return SCHOOL_TOPOLOGY_NODES.map((n) => ({
+      id: n.id,
+      type: 'deviceNode',
+      position: { x: n.pos_x, y: n.pos_y },
+      data: {
+        label: n.label,
+        type: n.type,
+        ip_address: n.ip_address,
+        port: n.port,
+        role: n.role,
+        location: n.location,
+        status: n.status || 'UP',
+        latency_ms: n.latency_ms,
+        parent_id: n.parent_id,
+        onSelect: () => {},
+      },
+    }));
+  });
+
+  const [edges, setEdges, onEdgesChange] = useEdgesState(() => {
+    return SCHOOL_TOPOLOGY_NODES.filter((n) => n.parent_id).map((n) => {
+      const isParentDown = SCHOOL_TOPOLOGY_NODES.find((p) => p.id === n.parent_id)?.status === 'DOWN';
+      const isNodeDown = n.status === 'DOWN';
+      const isDown = isParentDown || isNodeDown;
+      return {
+        id: `e-${n.parent_id}-${n.id}`,
+        source: n.parent_id,
+        target: n.id,
+        type: 'smoothstep',
+        animated: !isDown,
+        style: {
+          stroke: isDown ? '#f29583' : '#5ce4bd',
+          strokeWidth: 2,
+          strokeDasharray: isDown ? '5,5' : undefined,
+        },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          width: 14,
+          height: 14,
+          color: isDown ? '#f29583' : '#5ce4bd',
+        },
+      };
+    });
+  });
+  const [selectedNodeId, setSelectedNodeId] = useState(selectedNodeIdProp || null);
+  const [simulatedDownId, setSimulatedDownId] = useState(null);
+  const [rfInstance, setRfInstance] = useState(null);
+
+  // Sinkronisasi jika prop selectedNodeId berubah dari luar (misal dari pencarian GlobalSearchPalette)
+  useEffect(() => {
+    if (selectedNodeIdProp !== undefined && selectedNodeIdProp !== selectedNodeId) {
+      setSelectedNodeId(selectedNodeIdProp);
+    }
+  }, [selectedNodeIdProp, selectedNodeId]);
+
+  const handleSelectNode = useCallback(
+    (id) => {
+      setSelectedNodeId(id);
+      if (onSelectNodeProp) onSelectNodeProp(id);
+    },
+    [onSelectNodeProp]
+  );
+
+  // Fokus otomatis ke node yang dipilih (animasi smooth pan & zoom)
+  useEffect(() => {
+    if (selectedNodeId && rfInstance && nodes && nodes.length > 0) {
+      const targetNode = nodes.find((n) => n.id === selectedNodeId);
+      if (targetNode && targetNode.position) {
+        rfInstance.setCenter(
+          targetNode.position.x + 107,
+          targetNode.position.y + 45,
+          { zoom: 1.15, duration: 600 }
+        );
+      }
+    }
+  }, [selectedNodeId, rfInstance, nodes]);
+
+  // Simulasi Gangguan Server Acak (Bisa diaktifkan/dinonaktifkan kapan saja saat demo)
+  const handleToggleSimulation = () => {
+    if (simulatedDownId) {
+      setSimulatedDownId(null);
+    } else {
+      const candidates = [
+        'nas-backup-storage',
+        'srv-cctv-nvr',
+        'srv-slims',
+        'srv-moodle',
+        'srv-web-school',
+        'ap-lab-komputer',
+        'ap-ruang-guru'
+      ];
+      const randomNodeId = candidates[Math.floor(Math.random() * candidates.length)];
+      setSimulatedDownId(randomNodeId);
+    }
+  };
 
   // Auto-Discovery States
   const [isDiscovering, setIsDiscovering] = useState(false);
@@ -187,14 +284,23 @@ export default function TopologyMap({
 
   const nodeTypes = useMemo(() => ({ deviceNode: DeviceNode }), []);
 
+  const activeRawNodes = useMemo(() => {
+    return SCHOOL_TOPOLOGY_NODES.map((n) => {
+      if (simulatedDownId && n.id === simulatedDownId) {
+        return { ...n, status: 'DOWN', latency_ms: null };
+      }
+      return { ...n, status: 'UP', latency_ms: n.latency_ms || 1 };
+    });
+  }, [simulatedDownId]);
+
   // Build and Synchronize Topology Graph
   useEffect(() => {
-    if (!rawNodes || rawNodes.length === 0) return;
+    if (!activeRawNodes || activeRawNodes.length === 0) return;
 
     setNodes((prevNodes) => {
       // First initialization or length mismatch:
-      if (prevNodes.length === 0 || prevNodes.length !== rawNodes.length) {
-        return rawNodes.map((n) => ({
+      if (prevNodes.length === 0 || prevNodes.length !== activeRawNodes.length) {
+        return activeRawNodes.map((n) => ({
           id: n.id,
           type: 'deviceNode',
           selected: n.id === selectedNodeId,
@@ -207,17 +313,19 @@ export default function TopologyMap({
             type: n.type,
             ip_address: n.ip_address,
             port: n.port,
+            role: n.role,
+            location: n.location,
             status: n.status || 'UP',
             latency_ms: n.latency_ms,
             parent_id: n.parent_id,
-            onSelect: () => setSelectedNodeId(n.id),
+            onSelect: () => handleSelectNode(n.id),
           },
         }));
       }
 
       // Existing nodes: only update data without resetting position or drag
       return prevNodes.map((flowNode) => {
-        const raw = rawNodes.find((r) => r.id === flowNode.id);
+        const raw = activeRawNodes.find((r) => r.id === flowNode.id);
         if (!raw) return flowNode;
         return {
           ...flowNode,
@@ -228,20 +336,22 @@ export default function TopologyMap({
             type: raw.type,
             ip_address: raw.ip_address,
             port: raw.port,
+            role: raw.role,
+            location: raw.location,
             status: raw.status || 'UP',
             latency_ms: raw.latency_ms,
             parent_id: raw.parent_id,
-            onSelect: () => setSelectedNodeId(raw.id),
+            onSelect: () => handleSelectNode(raw.id),
           },
         };
       });
     });
 
     // Convert Edges (Dashed red/salmon for down nodes)
-    const flowEdges = rawNodes
+    const flowEdges = activeRawNodes
       .filter((n) => n.parent_id)
       .map((n) => {
-        const isParentDown = rawNodes.find((p) => p.id === n.parent_id)?.status === 'DOWN';
+        const isParentDown = activeRawNodes.find((p) => p.id === n.parent_id)?.status === 'DOWN';
         const isNodeDown = n.status === 'DOWN';
         const isDown = isParentDown || isNodeDown;
 
@@ -266,12 +376,12 @@ export default function TopologyMap({
       });
 
     setEdges(flowEdges);
-  }, [rawNodes, selectedNodeId, setNodes, setEdges]);
+  }, [activeRawNodes, selectedNodeId, setNodes, setEdges, handleSelectNode]);
 
   // Handle Drag Position
   const handleNodeDragStop = useCallback(
     (_, node) => {
-      setSelectedNodeId(node.id);
+      handleSelectNode(node.id);
       if (onUpdateNodePosition) {
         onUpdateNodePosition(node.id, {
           pos_x: Math.round(node.position.x),
@@ -279,12 +389,12 @@ export default function TopologyMap({
         });
       }
     },
-    [onUpdateNodePosition]
+    [handleSelectNode, onUpdateNodePosition]
   );
 
   const selectedNodeData = useMemo(() => {
     if (!selectedNodeId) return null;
-    const fromRaw = rawNodes.find((n) => n.id === selectedNodeId);
+    const fromRaw = activeRawNodes.find((n) => n.id === selectedNodeId);
     if (fromRaw) return fromRaw;
     const fromFlow = nodes.find((n) => n.id === selectedNodeId);
     if (fromFlow) {
@@ -296,37 +406,27 @@ export default function TopologyMap({
       };
     }
     return null;
-  }, [rawNodes, nodes, selectedNodeId]);
+  }, [activeRawNodes, nodes, selectedNodeId]);
 
   const parentNode = useMemo(() => {
     if (!selectedNodeData?.parent_id) return null;
-    return rawNodes.find((n) => n.id === selectedNodeData.parent_id);
-  }, [rawNodes, selectedNodeData]);
+    return activeRawNodes.find((n) => n.id === selectedNodeData.parent_id);
+  }, [activeRawNodes, selectedNodeData]);
 
-  // Handle Ping Single Node
+  // Handle Ping Single Node (Simulasi Infrastruktur Sekolah)
   const handleRunPing = async () => {
     if (!selectedNodeData) return;
     setIsPinging(true);
     setPingStatus('Pinging...');
-    try {
-      if (onPingNode) {
-        const res = await onPingNode(selectedNodeData.id);
-        if (res && res.status === 'UP') {
-          setPingStatus(`UP (${res.latency_ms ?? 1}ms)`);
-        } else {
-          setPingStatus('DOWN (Tidak merespons)');
-        }
+    setTimeout(() => {
+      if (selectedNodeData.status === 'DOWN') {
+        setPingStatus('DOWN (Request timed out / Offline)');
       } else {
-        setTimeout(() => {
-          setPingStatus(selectedNodeData.status === 'DOWN' ? 'DOWN (Request timeout)' : 'UP (1ms)');
-          setIsPinging(false);
-        }, 600);
-        return;
+        const fakeLat = selectedNodeData.latency_ms || Math.floor(Math.random() * 2) + 1;
+        setPingStatus(`UP (${fakeLat}ms · Host Normal)`);
       }
-    } catch {
-      setPingStatus('Gagal menguji');
-    }
-    setIsPinging(false);
+      setIsPinging(false);
+    }, 450);
   };
 
   const handleCreateNode = async (e) => {
@@ -374,21 +474,21 @@ export default function TopologyMap({
       if (onDeleteNode) {
         await onDeleteNode(selectedNodeData.id);
       }
-      setSelectedNodeId(null);
+      handleSelectNode(null);
     }
   };
 
   // Stats
-  const totalCount = rawNodes.length;
-  const onlineCount = rawNodes.filter((n) => n.status === 'UP').length;
-  const downCount = rawNodes.filter((n) => n.status === 'DOWN').length;
+  const totalCount = activeRawNodes.length;
+  const onlineCount = activeRawNodes.filter((n) => n.status === 'UP').length;
+  const downCount = activeRawNodes.filter((n) => n.status === 'DOWN').length;
 
   return (
     <div className="space-y-5 w-full">
       {/* ==========================================
           HEADER TOPOLOGY MAP (Sesuai Desain Figma)
       ========================================== */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <span className="text-[10px] font-bold text-[#5ce4bd] uppercase tracking-wider block">
             MONITORING / 02
@@ -397,29 +497,74 @@ export default function TopologyMap({
             Topology Map
           </h1>
           <p className="text-[13px] text-[#91a4ae] mt-0.5">
-            Lihat koneksi, temukan gangguan, kenali dampaknya.
+            Arsitektur Jaringan Skala Besar Sekolah &amp; CBT (Infrastruktur Enterprise)
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Tombol Simulasi Gangguan Random / Pulihkan Normal */}
           <button
             type="button"
-            onClick={handleAutoDiscover}
-            disabled={isDiscovering}
-            className="bg-[#152028] border border-[#243139] hover:border-[#5ce4bd] text-[#edf4f5] hover:text-[#5ce4bd] text-xs px-3.5 py-2.5 rounded-[8px] flex items-center gap-1.5 shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
-            title="Pindai otomatis router gateway & service lokal yang aktif"
+            onClick={handleToggleSimulation}
+            className={`text-xs px-3 py-2 rounded-[8px] flex items-center gap-1.5 shadow-sm transition-all cursor-pointer font-medium ${
+              simulatedDownId
+                ? 'bg-[#1b4334] border border-[#214f3f] text-[#5ce4bd] hover:bg-[#235341]'
+                : 'bg-[#152028] border border-[#243139] hover:border-[#f29583]/60 text-[#91a4ae] hover:text-[#f29583]'
+            }`}
+            title={
+              simulatedDownId
+                ? 'Klik untuk memulihkan semua server kembali normal (100% Online)'
+                : 'Simulasi demo: matikan 1 server secara acak untuk menguji deteksi NOC'
+            }
           >
-            {isDiscovering ? (
-              <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#5ce4bd]" />
+            {simulatedDownId ? (
+              <>
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#5ce4bd]" />
+                <span>Pulihkan Normal</span>
+              </>
             ) : (
-              <Sparkles className="w-3.5 h-3.5 text-[#5ce4bd]" />
+              <>
+                <Sparkles className="w-3.5 h-3.5 text-[#f29583]" />
+                <span>Simulasi Gangguan (Acak)</span>
+              </>
             )}
-            <span>{isDiscovering ? 'Memindai server...' : 'Auto-Discover'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setSimulatedDownId(null);
+              setNodes(
+                SCHOOL_TOPOLOGY_NODES.map((n) => ({
+                  id: n.id,
+                  type: 'deviceNode',
+                  selected: n.id === selectedNodeId,
+                  position: { x: n.pos_x, y: n.pos_y },
+                  data: {
+                    label: n.label,
+                    type: n.type,
+                    ip_address: n.ip_address,
+                    port: n.port,
+                    role: n.role,
+                    location: n.location,
+                    status: 'UP',
+                    latency_ms: n.latency_ms || 1,
+                    parent_id: n.parent_id,
+                    onSelect: () => handleSelectNode(n.id),
+                  },
+                }))
+              );
+            }}
+            className="bg-[#152028] border border-[#243139] hover:border-[#5ce4bd] text-[#91a4ae] hover:text-[#edf4f5] text-xs px-3 py-2 rounded-[8px] flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+            title="Kembalikan susunan topologi ke posisi rapi default dan 100% normal"
+          >
+            <RotateCw className="w-3.5 h-3.5" />
+            <span>Reset Posisi</span>
           </button>
 
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="bg-[#5ce4bd] hover:bg-[#4cd4ad] text-[#0b1015] font-semibold text-xs px-4 py-2.5 rounded-[8px] flex items-center gap-1.5 shadow-sm transition-all active:scale-[0.98]"
+            className="bg-[#5ce4bd] hover:bg-[#4cd4ad] text-[#0b1015] font-semibold text-xs px-4 py-2 rounded-[8px] flex items-center gap-1.5 shadow-sm transition-all active:scale-[0.98] cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Add node</span>
@@ -457,27 +602,38 @@ export default function TopologyMap({
       )}
 
       {/* ==========================================
-          INCIDENT BANNER (Jika Ada Node Down)
+          INCIDENT BANNER (Hanya Muncul Saat Ada Node Down / Simulasi Aktif)
       ========================================== */}
       {downCount > 0 && (
         <div className="bg-[#2a1d1a] border border-[#442721] rounded-[10px] px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="w-2 h-2 rounded-full bg-[#f29583] animate-pulse" />
             <span className="text-[13px] font-semibold text-[#f29583]">
-              Gangguan koneksi terdeteksi
+              Gangguan koneksi terdeteksi ({downCount} perangkat offline)
             </span>
             <span className="text-[12px] text-[#91a4ae] hidden sm:inline">
-              Periksa router utama untuk memulihkan koneksi perangkat.
+              {simulatedDownId ? 'Mode simulasi insiden aktif. Klik Pulihkan untuk menormalkan kembali.' : 'Periksa router utama untuk memulihkan koneksi perangkat.'}
             </span>
           </div>
 
-          <button
-            onClick={() => (onNavigateToLogs ? onNavigateToLogs() : null)}
-            className="text-[12px] font-medium text-[#f29583] hover:underline flex items-center gap-1"
-          >
-            <span>Lihat connection logs</span>
-            <ExternalLink className="w-3 h-3" />
-          </button>
+          <div className="flex items-center gap-3">
+            {simulatedDownId && (
+              <button
+                type="button"
+                onClick={handleToggleSimulation}
+                className="bg-[#1b4334] border border-[#214f3f] text-[#5ce4bd] hover:bg-[#235341] text-xs px-2.5 py-1 rounded-[6px] font-semibold transition cursor-pointer"
+              >
+                Pulihkan
+              </button>
+            )}
+            <button
+              onClick={() => (onNavigateToLogs ? onNavigateToLogs() : null)}
+              className="text-[12px] font-medium text-[#f29583] hover:underline flex items-center gap-1"
+            >
+              <span>Lihat logs</span>
+              <ExternalLink className="w-3 h-3" />
+            </button>
+          </div>
         </div>
       )}
 
@@ -512,13 +668,14 @@ export default function TopologyMap({
 
           {/* React Flow Component */}
           <ReactFlow
+            onInit={setRfInstance}
             nodes={nodes}
             edges={edges}
             nodeTypes={nodeTypes}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
-            onNodeClick={(_, node) => setSelectedNodeId(node.id)}
-            onPaneClick={() => setSelectedNodeId(null)}
+            onNodeClick={(_, node) => handleSelectNode(node.id)}
+            onPaneClick={() => handleSelectNode(null)}
             onNodeDragStop={handleNodeDragStop}
             fitView
             fitViewOptions={{ padding: 0.2 }}
@@ -599,7 +756,7 @@ export default function TopologyMap({
 
                 <button
                   type="button"
-                  onClick={() => setSelectedNodeId(null)}
+                  onClick={() => handleSelectNode(null)}
                   className="p-1 rounded-[6px] hover:bg-[#152028] text-[#91a4ae] hover:text-[#edf4f5] transition"
                   title="Tutup Panel"
                 >
@@ -617,6 +774,28 @@ export default function TopologyMap({
 
               {/* Specs List */}
               <div className="space-y-3 mt-5 text-xs">
+                {selectedNodeData.role && (
+                  <div className="bg-[#152028] border border-[#243139] rounded-[6px] p-2.5">
+                    <span className="text-[10px] font-bold text-[#5ce4bd] uppercase block mb-0.5">
+                      Fungsi / Peran Server
+                    </span>
+                    <span className="text-[#edf4f5] text-[12px] leading-tight block">
+                      {selectedNodeData.role}
+                    </span>
+                  </div>
+                )}
+
+                {selectedNodeData.location && (
+                  <div>
+                    <span className="text-[10px] font-semibold text-[#657d89] uppercase block mb-0.5">
+                      Lokasi Fisik
+                    </span>
+                    <span className="text-[#edf4f5] text-xs">
+                      {selectedNodeData.location}
+                    </span>
+                  </div>
+                )}
+
                 <div>
                   <span className="text-[10px] font-semibold text-[#657d89] uppercase block mb-0.5">
                     IP address
@@ -823,7 +1002,7 @@ export default function TopologyMap({
                     className="w-full px-3 py-2 bg-[#152028] border border-[#243139] rounded-[8px] text-[#edf4f5] focus:outline-none focus:border-[#5ce4bd]"
                   >
                     <option value="">-- Root (Tanpa Parent) --</option>
-                    {rawNodes.map((n) => (
+                    {activeRawNodes.map((n) => (
                       <option key={n.id} value={n.id}>
                         {n.label}
                       </option>
@@ -940,7 +1119,7 @@ export default function TopologyMap({
                     className="w-full px-3 py-2 bg-[#152028] border border-[#243139] rounded-[8px] text-[#edf4f5] focus:outline-none focus:border-[#5ce4bd]"
                   >
                     <option value="">-- Root (Tanpa Parent) --</option>
-                    {rawNodes
+                    {activeRawNodes
                       .filter((n) => n.id !== selectedNodeId)
                       .map((n) => (
                         <option key={n.id} value={n.id}>

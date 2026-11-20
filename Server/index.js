@@ -143,6 +143,45 @@ app.post('/api/nodes/:id/ping', async (req, res) => {
   });
 });
 
+// POST /api/nodes/preset-school -> Muat dataset topologi server skala besar sekolah
+app.post('/api/nodes/preset-school', (req, res) => {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const presetPath = path.join(__dirname, 'schoolNodesSeed.json');
+    if (!fs.existsSync(presetPath)) {
+      return res.status(404).json({ error: 'Berkas preset sekolah tidak ditemukan.' });
+    }
+    const schoolNodes = JSON.parse(fs.readFileSync(presetPath, 'utf8'));
+
+    const insertNode = db.prepare(`
+      INSERT OR REPLACE INTO nodes (id, label, type, ip_address, port, parent_id, pos_x, pos_y)
+      VALUES (@id, @label, @type, @ip_address, @port, @parent_id, @pos_x, @pos_y)
+    `);
+
+    const insertMany = db.transaction((items) => {
+      for (const item of items) {
+        insertNode.run({
+          id: item.id,
+          label: item.label,
+          type: item.type,
+          ip_address: item.ip_address,
+          port: item.port || 0,
+          parent_id: item.parent_id || null,
+          pos_x: item.pos_x || 100,
+          pos_y: item.pos_y || 100
+        });
+      }
+    });
+
+    insertMany(schoolNodes);
+    const allNodes = db.prepare('SELECT * FROM nodes').all();
+    res.json({ success: true, count: allNodes.length, nodes: allNodes });
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal memuat preset: ' + err.message });
+  }
+});
+
 // ==========================================
 // ==========================================
 // 2. REST API: Live DNS Lookup (GET /api/dns?domain=...)
@@ -229,7 +268,8 @@ app.get('/api/dns', async (req, res) => {
 // ==========================================
 app.get('/api/ping', async (req, res) => {
   const host = (req.query.host || '127.0.0.1').trim();
-  if (!host || !/^[a-zA-Z0-9.-]+$/.test(host)) {
+  // Validasi ketat cegah argument injection dan flag options (wajib diawali alfanumerik)
+  if (!host || !/^[a-zA-Z0-9][a-zA-Z0-9.-]*$/.test(host)) {
     return res.status(400).json({ error: 'Parameter host tidak valid.' });
   }
 
@@ -248,8 +288,13 @@ app.get('/api/ping', async (req, res) => {
 // ==========================================
 app.post('/api/port-scan', async (req, res) => {
   const { host = '127.0.0.1', ports = [21, 22, 53, 80, 443, 3306, 8080, 8291] } = req.body;
-  if (!host || !/^[a-zA-Z0-9.-]+$/.test(host)) {
+  if (!host || !/^[a-zA-Z0-9][a-zA-Z0-9.-]*$/.test(host)) {
     return res.status(400).json({ error: 'Parameter host tidak valid.' });
+  }
+
+  // Mitigasi SSRF: Blokir scanning ke endpoint Cloud Metadata
+  if (host === '169.254.169.254' || host === 'metadata.google.internal' || host === 'instance-data') {
+    return res.status(403).json({ error: 'Pemindaian ke alamat metadata cloud diblokir untuk keamanan.' });
   }
 
   const targetPorts = Array.isArray(ports)

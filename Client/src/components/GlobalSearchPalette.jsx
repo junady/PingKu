@@ -15,6 +15,7 @@ import {
   X,
   Layers,
   Terminal,
+  Network,
 } from 'lucide-react';
 
 export default function GlobalSearchPalette({
@@ -61,14 +62,17 @@ export default function GlobalSearchPalette({
 
   const q = (searchQuery || '').trim().toLowerCase();
 
-  // 1. Filter Nodes
+  // 1. Filter Nodes (Cari berdasarkan Label, IP, Port, Type, Role, Lokasi, atau ID)
   const matchedNodes = nodes.filter((n) => {
     if (!q) return false;
     const labelMatch = (n.label || '').toLowerCase().includes(q);
     const ipMatch = (n.ip_address || '').toLowerCase().includes(q);
-    const portMatch = String(n.port || '').includes(q);
+    const portMatch = n.port ? String(n.port).includes(q) : false;
     const typeMatch = (n.type || '').toLowerCase().includes(q);
-    return labelMatch || ipMatch || portMatch || typeMatch;
+    const roleMatch = (n.role || '').toLowerCase().includes(q);
+    const locMatch = (n.location || '').toLowerCase().includes(q);
+    const idMatch = (n.id || '').toLowerCase().includes(q);
+    return labelMatch || ipMatch || portMatch || typeMatch || roleMatch || locMatch || idMatch;
   });
 
   // 2. Filter Logs
@@ -84,6 +88,7 @@ export default function GlobalSearchPalette({
 
   // Navigasi cepat
   const navItems = [
+    { id: 'showcase', title: 'Showcase Demo', desc: 'Kembali ke halaman landing demo & showcase fitur', icon: Activity },
     { id: 'overview', title: 'Overview', desc: 'Metrik sistem CPU, RAM, I/O & host', icon: Activity },
     { id: 'topology', title: 'Topology Map', desc: `Peta topologi ${nodes.length} perangkat jaringan`, icon: Layers },
     { id: 'tools', title: 'Network Tools', desc: 'Diagnostik DNS, Live Ping & Port Scanner', icon: Terminal },
@@ -101,6 +106,8 @@ export default function GlobalSearchPalette({
     switch (type) {
       case 'router':
         return <Router className="w-4 h-4 text-[#5ce4bd]" />;
+      case 'switch':
+        return <Network className="w-4 h-4 text-[#5ce4bd]" />;
       case 'server':
         return <Server className="w-4 h-4 text-[#60a5fa]" />;
       case 'client':
@@ -113,7 +120,7 @@ export default function GlobalSearchPalette({
   return (
     <div
       ref={containerRef}
-      className="absolute top-full right-0 mt-2 w-[480px] max-w-[90vw] bg-[#111921] border border-[#1f2c35] rounded-[12px] shadow-2xl z-50 overflow-hidden text-xs text-[#edf4f5] animate-in fade-in duration-150 backdrop-blur-md"
+      className="absolute top-full right-0 mt-2 w-[500px] max-w-[92vw] bg-[#111921] border border-[#1f2c35] rounded-[12px] shadow-2xl z-50 overflow-hidden text-xs text-[#edf4f5] animate-in fade-in duration-150 backdrop-blur-md"
     >
       {/* Header Info Bar */}
       <div className="flex items-center justify-between px-4 py-2.5 bg-[#0e141a] border-b border-[#1b262e] text-[11px] text-[#91a4ae]">
@@ -136,11 +143,80 @@ export default function GlobalSearchPalette({
         </div>
       </div>
 
-      <div className="max-h-[460px] overflow-y-auto divide-y divide-[#18232c] p-2 space-y-2">
-        {/* BAGIAN 1: AKSI CEPAT DIAGNOSTIK JIKA MENGETIK IP / HOST */}
-        {q && isLikelyHost && (
+      <div className="max-h-[480px] overflow-y-auto divide-y divide-[#18232c] p-2 space-y-2">
+        {/* BAGIAN 1 (PRIORITAS TINGGI): PERANGKAT / NODES TOPOLOGI YANG COCOK */}
+        {q && matchedNodes.length > 0 && (
           <div className="pt-1">
-            <div className="px-2 pb-1.5 text-[10px] font-bold text-[#5ce4bd] uppercase tracking-wider">
+            <div className="px-2 pb-1.5 text-[10px] font-bold text-[#5ce4bd] uppercase tracking-wider flex items-center justify-between">
+              <span>Perangkat Ditemukan ({matchedNodes.length})</span>
+              <span className="text-[#657d89]">Klik untuk buka & fokus di Topology</span>
+            </div>
+            <div className="space-y-1.5">
+              {matchedNodes.map((node) => (
+                <button
+                  key={node.id}
+                  type="button"
+                  onClick={() => {
+                    onSelectNode?.(node);
+                    onNavigateTab?.('topology');
+                    setIsOpen(false);
+                  }}
+                  className="w-full flex items-center justify-between p-2.5 rounded-[8px] bg-[#152028] hover:bg-[#1a2933] border border-[#243139] hover:border-[#5ce4bd]/60 transition-all text-left group shadow-sm"
+                >
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="w-8 h-8 rounded-[6px] bg-[#1a2530] border border-[#2e3e48] group-hover:border-[#5ce4bd]/40 flex items-center justify-center shrink-0">
+                      {getNodeIcon(node.type)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold text-[#edf4f5] group-hover:text-[#5ce4bd] truncate flex items-center gap-1.5 text-[12px]">
+                        <span>{node.label}</span>
+                        <span className="text-[9px] uppercase px-1 rounded bg-[#1e2a33] text-[#91a4ae] font-mono">
+                          {node.type}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-[#91a4ae] font-mono flex items-center gap-2 mt-0.5">
+                        <span className="text-[#5ce4bd] bg-[#132822] border border-[#214f3f]/50 px-1 rounded font-semibold">
+                          {node.ip_address}{node.port ? `:${node.port}` : ''}
+                        </span>
+                        {node.location && (
+                          <span className="text-[#657d89] truncate">· {node.location}</span>
+                        )}
+                        {node.latency_ms !== null && node.latency_ms !== undefined && (
+                          <span className="text-[#5ce4bd]">· {node.latency_ms} ms</span>
+                        )}
+                      </div>
+                      {node.role && (
+                        <div className="text-[10px] text-[#657d89] group-hover:text-[#91a4ae] truncate mt-0.5">
+                          {node.role}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0 ml-2">
+                    <span
+                      className={`px-1.5 py-0.5 rounded text-[9px] font-bold font-mono ${
+                        node.status === 'UP' || !node.status
+                          ? 'bg-[#163229] text-[#5ce4bd] border border-[#214f3f]'
+                          : node.status === 'DOWN'
+                          ? 'bg-[#34231f] text-[#f29583] border border-[#4d2d25]'
+                          : 'bg-[#222a30] text-[#91a4ae] border border-[#2e3e48]'
+                      }`}
+                    >
+                      {node.status || 'ONLINE'}
+                    </span>
+                    <ArrowRight className="w-3.5 h-3.5 text-[#657d89] group-hover:text-[#5ce4bd] transition-transform group-hover:translate-x-0.5" />
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* BAGIAN 2: AKSI CEPAT DIAGNOSTIK JIKA MENGETIK IP / HOST */}
+        {q && isLikelyHost && (
+          <div className="pt-2">
+            <div className="px-2 pb-1.5 text-[10px] font-bold text-[#91a4ae] uppercase tracking-wider">
               Aksi Diagnostik Cepat untuk "{q}"
             </div>
             <div className="space-y-1">
@@ -241,65 +317,6 @@ export default function GlobalSearchPalette({
           </div>
         )}
 
-        {/* BAGIAN 2: PERANGKAT / NODES YANG DITEMUKAN */}
-        {q && matchedNodes.length > 0 && (
-          <div className="pt-2">
-            <div className="px-2 pb-1.5 text-[10px] font-bold text-[#91a4ae] uppercase tracking-wider flex items-center justify-between">
-              <span>Perangkat Terdaftar ({matchedNodes.length})</span>
-              <span className="text-[#657d89]">Klik untuk buka di Topology</span>
-            </div>
-            <div className="space-y-1">
-              {matchedNodes.map((node) => (
-                <button
-                  key={node.id}
-                  type="button"
-                  onClick={() => {
-                    onSelectNode?.(node);
-                    onNavigateTab?.('topology');
-                    setIsOpen(false);
-                  }}
-                  className="w-full flex items-center justify-between p-2 rounded-[8px] bg-[#152028] hover:bg-[#1c2933] border border-[#243139] hover:border-[#2e3e48] transition text-left group"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-7 h-7 rounded-[6px] bg-[#1a2530] border border-[#2e3e48] flex items-center justify-center shrink-0">
-                      {getNodeIcon(node.type)}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="font-semibold text-[#edf4f5] group-hover:text-[#5ce4bd] truncate flex items-center gap-1.5">
-                        <span>{node.label}</span>
-                        <span className="text-[9px] uppercase px-1 rounded bg-[#1e2a33] text-[#91a4ae] font-mono">
-                          {node.type}
-                        </span>
-                      </div>
-                      <div className="text-[10px] text-[#91a4ae] font-mono flex items-center gap-2 mt-0.5">
-                        <span>{node.ip_address}{node.port ? `:${node.port}` : ''}</span>
-                        {node.latency_ms !== null && node.latency_ms !== undefined && (
-                          <span className="text-[#5ce4bd]">· {node.latency_ms} ms</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0 ml-2">
-                    <span
-                      className={`px-1.5 py-0.5 rounded text-[9px] font-bold font-mono ${
-                        node.status === 'UP'
-                          ? 'bg-[#163229] text-[#5ce4bd] border border-[#214f3f]'
-                          : node.status === 'DOWN'
-                          ? 'bg-[#34231f] text-[#f29583] border border-[#4d2d25]'
-                          : 'bg-[#222a30] text-[#91a4ae] border border-[#2e3e48]'
-                      }`}
-                    >
-                      {node.status || 'UNKNOWN'}
-                    </span>
-                    <ArrowRight className="w-3.5 h-3.5 text-[#657d89] group-hover:text-[#edf4f5]" />
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* DEFAULT VIEW JIKA QUERY KOSONG: DAFTAR PERANGKAT AKTIF */}
         {!q && nodes.length > 0 && (
           <div className="pt-1">
@@ -308,7 +325,7 @@ export default function GlobalSearchPalette({
               <span className="text-[#657d89]">Topologi Aktif</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-              {nodes.slice(0, 4).map((node) => (
+              {nodes.slice(0, 6).map((node) => (
                 <button
                   key={node.id}
                   type="button"
@@ -322,7 +339,7 @@ export default function GlobalSearchPalette({
                   <div className="flex items-center gap-2 min-w-0">
                     <span
                       className={`w-2 h-2 rounded-full shrink-0 ${
-                        node.status === 'UP' ? 'bg-[#5ce4bd]' : 'bg-[#f29583]'
+                        node.status === 'UP' || !node.status ? 'bg-[#5ce4bd]' : 'bg-[#f29583]'
                       }`}
                     />
                     <div className="min-w-0">

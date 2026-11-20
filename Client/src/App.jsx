@@ -4,7 +4,7 @@
  * Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0).
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import {
   LayoutDashboard,
   Share2,
@@ -17,9 +17,12 @@ import {
   ChevronDown,
   RotateCw,
   ExternalLink,
+  Sparkles,
+  ArrowUpRight,
 } from 'lucide-react';
 import pingkuLogo from './assets/pingku-logo.png';
 import { useTelemetry } from './hooks/useTelemetry';
+import { SCHOOL_TOPOLOGY_NODES } from './data/schoolTopologyData';
 import TopMetricCards from './components/TopMetricCards';
 import SystemPerformanceChart from './components/SystemPerformanceChart';
 import RecentAlertsCard from './components/RecentAlertsCard';
@@ -29,6 +32,7 @@ import NetworkToolsHub from './components/NetworkToolsHub';
 import ConnectionLogsView from './components/ConnectionLogsView';
 import SettingsView from './components/SettingsView';
 import GlobalSearchPalette from './components/GlobalSearchPalette';
+import DemoLandingView from './components/DemoLandingView';
 
 export default function App() {
   const {
@@ -46,11 +50,24 @@ export default function App() {
   } = useTelemetry();
 
   const [activeTab, setActiveTab] = useState('overview');
+  const [isLandingDemo, setIsLandingDemo] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [toolsInitialSubTab, setToolsInitialSubTab] = useState('suite');
   const [toolsInitialTarget, setToolsInitialTarget] = useState('');
+  const [selectedTopologyNodeId, setSelectedTopologyNodeId] = useState(null);
   const searchInputRef = useRef(null);
+
+  // Gabungkan 18 enterprise school nodes dengan node tambahan bila ada
+  const allSearchNodes = useMemo(() => {
+    const schoolMap = new Map(SCHOOL_TOPOLOGY_NODES.map((n) => [n.id, n]));
+    (nodes || []).forEach((n) => {
+      if (!schoolMap.has(n.id)) {
+        schoolMap.set(n.id, n);
+      }
+    });
+    return Array.from(schoolMap.values());
+  }, [nodes]);
 
   const menuItems = [
     {
@@ -98,6 +115,20 @@ export default function App() {
 
   const currentMenu = menuItems.find((item) => item.id === activeTab) || menuItems[0];
 
+  if (isLandingDemo) {
+    return (
+      <DemoLandingView
+        system={system}
+        nodes={nodes}
+        isConnected={isConnected}
+        onOpenLiveDashboard={(tab = 'overview') => {
+          setActiveTab(tab);
+          setIsLandingDemo(false);
+        }}
+      />
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-[#0b1015] text-[#edf4f5] font-sans antialiased selection:bg-[#5ce4bd]/30 selection:text-[#edf4f5]">
       {/* =========================================================================
@@ -115,7 +146,7 @@ export default function App() {
           </div>
 
           {/* Workspace Selector Card */}
-          <div className="bg-[#152028] border border-[#243139] hover:border-[#2e3e48] rounded-[8px] p-2.5 mb-4 flex items-center justify-between cursor-pointer transition-colors">
+          <div className="bg-[#152028] border border-[#243139] hover:border-[#2e3e48] rounded-[8px] p-2.5 mb-3 flex items-center justify-between cursor-pointer transition-colors">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-6 h-6 rounded-[5px] bg-[#1a2530] border border-[#2e3e48] flex items-center justify-center text-[#5ce4bd] shrink-0">
                 <Layers className="w-3.5 h-3.5" />
@@ -131,6 +162,19 @@ export default function App() {
             </div>
             <ChevronDown className="w-3.5 h-3.5 text-[#657d89] shrink-0 ml-1" />
           </div>
+
+          {/* Tombol Kembali ke Showcase Demo */}
+          <button
+            type="button"
+            onClick={() => setIsLandingDemo(true)}
+            className="w-full flex items-center justify-between px-3 py-2 rounded-[8px] bg-[#142e24] hover:bg-[#1a3d30] border border-[#214f3f] text-[#5ce4bd] text-[12px] font-semibold mb-3 transition cursor-pointer group"
+          >
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-[#5ce4bd] group-hover:scale-110 transition-transform" />
+              <span>Showcase Demo</span>
+            </div>
+            <ArrowUpRight className="w-3.5 h-3.5 text-[#5ce4bd]" />
+          </button>
 
           {/* Navigasi Utama (5 Tabs) */}
           <nav className="space-y-1">
@@ -244,24 +288,43 @@ export default function App() {
                 setIsOpen={setIsSearchOpen}
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
-                nodes={nodes}
+                nodes={allSearchNodes}
                 logs={logs}
                 onNavigateTab={(tabId) => {
-                  setActiveTab(tabId);
+                  if (tabId === 'showcase') {
+                    setIsLandingDemo(true);
+                  } else {
+                    setActiveTab(tabId);
+                    setIsLandingDemo(false);
+                  }
                   setIsSearchOpen(false);
                 }}
                 onSelectNode={(node) => {
+                  setSelectedTopologyNodeId(node.id);
                   setActiveTab('topology');
+                  setIsLandingDemo(false);
                   setIsSearchOpen(false);
                 }}
                 onQuickDiagnostic={(toolType, target) => {
                   setToolsInitialSubTab(toolType === 'dns' ? 'suite' : toolType);
                   setToolsInitialTarget(target);
                   setActiveTab('tools');
+                  setIsLandingDemo(false);
                   setIsSearchOpen(false);
                 }}
               />
             </div>
+
+            {/* Tombol Showcase / Demo Mode */}
+            <button
+              type="button"
+              onClick={() => setIsLandingDemo(true)}
+              className="flex items-center gap-1.5 bg-[#14382b] hover:bg-[#1b4a38] border border-[#214f3f] text-[#5ce4bd] text-xs font-semibold px-3 py-1.5 rounded-[8px] transition-colors shadow-sm cursor-pointer"
+              title="Buka Halaman Showcase & Panduan Demo"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#5ce4bd]" />
+              <span className="hidden sm:inline">Showcase Demo</span>
+            </button>
 
             {/* Live Telemetry Indicator Badge */}
             <div className="flex items-center gap-1.5 bg-[#163229] border border-[#214f3f] text-[#5ce4bd] text-xs font-semibold px-3 py-1.5 rounded-[8px] shadow-sm">
@@ -355,6 +418,8 @@ export default function App() {
           {activeTab === 'topology' && (
             <div className="flex-1 w-full min-h-[660px] flex">
               <TopologyMap
+                selectedNodeId={selectedTopologyNodeId}
+                onSelectNode={setSelectedTopologyNodeId}
                 nodes={nodes}
                 onAddNode={addNode}
                 onUpdateNode={updateNode}

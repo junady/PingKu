@@ -33,3 +33,7 @@ yarn-error.log*
 Thumbs.db
 .idea/
 .vscode/
+
+# Security & Review Tooling
+grim-prompter/
+threat-model/

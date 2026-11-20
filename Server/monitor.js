@@ -138,8 +138,8 @@ function checkTcpPort(ip, port, timeoutMs = 1500) {
 
 function checkIcmpPing(ip, timeoutMs = 1500) {
   return new Promise((resolve) => {
-    // Validasi sederhana agar aman dari Command Injection (NFR PRD)
-    if (!/^[a-zA-Z0-9.-]+$/.test(ip)) {
+    // Validasi ketat agar aman dari Command Injection & CLI flag option injection (diawali alfanumerik)
+    if (!/^[a-zA-Z0-9][a-zA-Z0-9.-]*$/.test(ip)) {
       return resolve({ status: 'DOWN', latency_ms: null });
     }
 
