@@ -37,3 +37,6 @@ Thumbs.db
 # Security & Review Tooling
 grim-prompter/
 threat-model/
+
+.vercel
+.env*

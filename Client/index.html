@@ -1,10 +1,63 @@
 <!doctype html>
-<html lang="en">
+<html lang="id">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+
+    <!-- Primary SEO Meta Tags -->
+    <title>PingKu — Lightweight NOC & Real-Time Server Telemetry Dashboard</title>
+    <meta name="title" content="PingKu — Lightweight NOC & Real-Time Server Telemetry Dashboard" />
+    <meta
+      name="description"
+      content="PingKu adalah aplikasi Network Operation Center (NOC) & dashboard telemetri server real-time ultra-ringan (<60 MB RAM). Dilengkapi visualisasi topologi interaktif, diagnostik DNS, live ping, port scanner, dan pemantauan sistem multi-platform."
+    />
+    <meta
+      name="keywords"
+      content="PingKu, NOC Dashboard, Network Operation Center, Server Telemetry, Interactive Network Topology, React Flow, Node.js NOC, Server Monitoring, Lightweight Monitoring, ICMP Ping, Port Scanner, DNS Query Tool, Arjuna Setya Ramadhani, MikroTik Monitoring, Cisco Catalyst Topology, School Server Architecture"
+    />
+    <meta name="author" content="Arjuna Setya Ramadhani" />
+    <meta name="publisher" content="Arjuna Setya Ramadhani" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow" />
+    <meta name="theme-color" content="#0b1015" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="application-name" content="PingKu NOC" />
+    <link rel="canonical" href="https://pingku.vercel.app/" />
+
+    <!-- Google Search Console Verification Tag (Isi kode dari GSC jika memilih metode HTML Tag) -->
+    <!-- <meta name="google-site-verification" content="PASTE_KODE_GSC_ANDA_DI_SINI" /> -->
+
+    <!-- Favicon & Mobile Icons -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PingKu — NOC & Server Telemetry</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/pingku-logo.png" />
+    <link rel="apple-touch-icon" href="/pingku-logo.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <!-- Open Graph / Facebook / WhatsApp / LinkedIn / Discord -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://pingku.vercel.app/" />
+    <meta property="og:site_name" content="PingKu NOC" />
+    <meta property="og:title" content="PingKu — Lightweight NOC & Real-Time Server Telemetry Dashboard" />
+    <meta
+      property="og:description"
+      content="Monitoring jaringan dan telemetri server modern tanpa agent berat (<60 MB RAM). Visualisasikan topologi server, diagnostik latensi DNS & Ping, dan simulasikan insiden secara instan."
+    />
+    <meta property="og:image" content="/pingku-logo.png" />
+    <meta property="og:image:secure_url" content="/pingku-logo.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:alt" content="PingKu — Lightweight NOC & Server Telemetry Dashboard Logo" />
+    <meta property="og:locale" content="id_ID" />
+    <meta property="og:locale:alternate" content="en_US" />
+
+    <!-- Twitter Card Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="PingKu — Lightweight NOC & Real-Time Server Telemetry Dashboard" />
+    <meta
+      name="twitter:description"
+      content="Monitoring jaringan dan telemetri server modern tanpa agent berat (<60 MB RAM). Dilengkapi topologi interaktif & diagnostik jaringan lengkap."
+    />
+    <meta name="twitter:image" content="/pingku-logo.png" />
+
     <!-- Google Fonts: Inter & JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -12,8 +65,49 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
+
+    <!-- Schema.org JSON-LD Structured Data for Rich Search Results -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "PingKu",
+        "headline": "Lightweight NOC & Real-Time Server Telemetry Dashboard",
+        "description": "PingKu adalah aplikasi monitoring jaringan (NOC) dan telemetri server real-time ultra-ringan dengan visualisasi topologi interaktif.",
+        "applicationCategory": "NetworkingApplication",
+        "operatingSystem": "Linux, Windows, macOS, Web",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "author": {
+          "@type": "Person",
+          "name": "Arjuna Setya Ramadhani",
+          "url": "https://github.com/junady"
+        },
+        "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+        "image": "/pingku-logo.png",
+        "url": "https://pingku.vercel.app/"
+      }
+    </script>
   </head>
   <body>
+    <noscript>
+      <div style="padding: 2rem; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0b1015; color: #edf4f5; min-height: 100vh;">
+        <h1 style="color: #5ce4bd;">PingKu — Lightweight NOC & Real-Time Server Telemetry Dashboard</h1>
+        <p style="font-size: 1.1rem; color: #91a4ae; max-width: 600px;">
+          Aplikasi monitoring jaringan (NOC) dan telemetri server real-time ultra-ringan (&lt;60 MB RAM di Linux).
+          Dibuat dengan Express Node.js, React Flow interaktif, dan telemetri live tanpa agent berat eksternal.
+        </p>
+        <p style="color: #657d89; font-size: 0.9rem;">
+          Copyright &copy; 2026 Arjuna Setya Ramadhani. Berlisensi GNU Affero General Public License v3.0 (AGPL-3.0).
+        </p>
+        <p style="color: #f3a63b; font-size: 0.9rem; margin-top: 1rem;">
+          Aktifkan JavaScript pada browser Anda untuk mengakses kanvas topologi jaringan, kalkulator VLSM, live ping, dan port scanner interaktif.
+        </p>
+      </div>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

@@ -1,0 +1,6 @@
+# robots.txt for PingKu NOC
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://pingku.vercel.app/sitemap.xml
