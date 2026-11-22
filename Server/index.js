@@ -121,8 +121,77 @@ app.delete('/api/nodes/:id', (req, res) => {
   res.json({ success: true });
 });
 
-// POST /api/nodes/:id/ping -> Manual test ping ulang perangkat tunggal
-app.post('/api/nodes/:id/ping', async (req, res) => {
+// ==========================================
+// Proteksi DoS: In-Memory Rate Limiter & Response Cache
+// ==========================================
+function createRateLimiter({ windowMs = 60000, maxRequests = 30, message = 'Terlalu banyak permintaan. Silakan coba lagi nanti.' } = {}) {
+  const ipRequests = new Map();
+
+  // Bersihkan record expired secara berkala setiap 5 menit
+  const timer = setInterval(() => {
+    const now = Date.now();
+    for (const [ip, data] of ipRequests.entries()) {
+      if (now > data.resetTime) {
+        ipRequests.delete(ip);
+      }
+    }
+  }, 5 * 60 * 1000);
+  if (timer.unref) timer.unref();
+
+  return (req, res, next) => {
+    const clientIp = (req.headers['x-forwarded-for']?.split(',')[0] || req.socket?.remoteAddress || '127.0.0.1').trim();
+    const now = Date.now();
+    const entry = ipRequests.get(clientIp);
+
+    if (!entry || now > entry.resetTime) {
+      ipRequests.set(clientIp, { count: 1, resetTime: now + windowMs });
+      res.setHeader('X-RateLimit-Limit', maxRequests);
+      res.setHeader('X-RateLimit-Remaining', maxRequests - 1);
+      return next();
+    }
+
+    if (entry.count >= maxRequests) {
+      const retryAfterSec = Math.max(1, Math.ceil((entry.resetTime - now) / 1000));
+      res.setHeader('Retry-After', retryAfterSec);
+      res.setHeader('X-RateLimit-Limit', maxRequests);
+      res.setHeader('X-RateLimit-Remaining', 0);
+      return res.status(429).json({
+        error: message,
+        retry_after_sec: retryAfterSec,
+      });
+    }
+
+    entry.count += 1;
+    res.setHeader('X-RateLimit-Limit', maxRequests);
+    res.setHeader('X-RateLimit-Remaining', maxRequests - entry.count);
+    next();
+  };
+}
+
+const pingLimiter = createRateLimiter({
+  windowMs: 60 * 1000,
+  maxRequests: 60,
+  message: 'Batas frekuensi uji ping tercapai (maks 60 per menit per IP). Silakan tunggu.',
+});
+
+const portScanLimiter = createRateLimiter({
+  windowMs: 60 * 1000,
+  maxRequests: 20,
+  message: 'Batas frekuensi port scanner tercapai (maks 20 per menit per IP). Silakan tunggu.',
+});
+
+const dnsLimiter = createRateLimiter({
+  windowMs: 60 * 1000,
+  maxRequests: 60,
+  message: 'Batas frekuensi query DNS tercapai (maks 60 per menit per IP). Silakan tunggu.',
+});
+
+// Cache response API untuk mereduksi beban I/O saat demo publik
+const apiDnsCache = new Map();
+const apiPingCache = new Map();
+
+// POST /api/nodes/:id/ping -> Manual test ping ulang perangkat tunggal (dengan rate limiter)
+app.post('/api/nodes/:id/ping', pingLimiter, async (req, res) => {
   const { id } = req.params;
   const node = db.prepare('SELECT * FROM nodes WHERE id = ?').get(id);
   if (!node) {
@@ -184,15 +253,22 @@ app.post('/api/nodes/preset-school', (req, res) => {
 
 // ==========================================
 // ==========================================
-// 2. REST API: Live DNS Lookup (GET /api/dns?domain=...)
+// 2. REST API: Live DNS Lookup (GET /api/dns?domain=...) (dengan Rate Limiter & Cache)
 // ==========================================
-app.get('/api/dns', async (req, res) => {
-  const domain = (req.query.domain || '').trim();
+app.get('/api/dns', dnsLimiter, async (req, res) => {
+  const domain = (req.query.domain || '').trim().toLowerCase();
   const resolverIp = (req.query.resolver || '').trim();
 
   // Validasi keamanan domain agar bebas Command Injection
   if (!domain || !/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(domain)) {
     return res.status(400).json({ error: 'Parameter domain tidak valid. Contoh: ?domain=google.com' });
+  }
+
+  // Cek cache response (TTL 10 detik) untuk mencegah abuse query DNS berulang
+  const cacheKey = `${domain}_${resolverIp || 'default'}`;
+  const cachedDns = apiDnsCache.get(cacheKey);
+  if (cachedDns && Date.now() < cachedDns.expiresAt) {
+    return res.json({ ...cachedDns.payload, cached: true });
   }
 
   const startTime = performance.now();
@@ -254,39 +330,62 @@ app.get('/api/dns', async (req, res) => {
     }
   }
 
-  res.json({
+  const dnsPayload = {
     domain,
     resolver: resolverIp || 'System DNS (Default)',
     query_time_ms: queryTimeMs || 1,
     status: resolved && (records.A.length > 0 || records.AAAA.length > 0) ? 'NOERROR' : 'NXDOMAIN',
     records,
-  });
+  };
+
+  // Simpan ke cache selama 10 detik
+  apiDnsCache.set(cacheKey, { payload: dnsPayload, expiresAt: Date.now() + 10000 });
+  if (apiDnsCache.size > 200) {
+    const oldest = apiDnsCache.keys().next().value;
+    if (oldest) apiDnsCache.delete(oldest);
+  }
+
+  res.json(dnsPayload);
 });
 
 // ==========================================
-// 3. REST API: Real-Time Ping Checker (GET /api/ping?host=...)
+// 3. REST API: Real-Time Ping Checker (GET /api/ping?host=...) (dengan Rate Limiter & Caching)
 // ==========================================
-app.get('/api/ping', async (req, res) => {
+app.get('/api/ping', pingLimiter, async (req, res) => {
   const host = (req.query.host || '127.0.0.1').trim();
   // Validasi ketat cegah argument injection dan flag options (wajib diawali alfanumerik)
   if (!host || !/^[a-zA-Z0-9][a-zA-Z0-9.-]*$/.test(host)) {
     return res.status(400).json({ error: 'Parameter host tidak valid.' });
   }
 
+  // Cek cache response (TTL 2.5 detik) untuk meredam klik ganda cepat atau bot spam
+  const cachedPing = apiPingCache.get(host);
+  if (cachedPing && Date.now() < cachedPing.expiresAt) {
+    return res.json({ ...cachedPing.payload, cached: true });
+  }
+
   const probe = await checkIcmpPing(host, 1500);
-  res.json({
+  const pingPayload = {
     host,
     status: probe.status,
     latency_ms: probe.latency_ms,
     ttl: 64,
     timestamp: new Date().toISOString(),
-  });
+  };
+
+  apiPingCache.set(host, { payload: pingPayload, expiresAt: Date.now() + 2500 });
+  if (apiPingCache.size > 200) {
+    const oldest = apiPingCache.keys().next().value;
+    if (oldest) apiPingCache.delete(oldest);
+  }
+
+  res.json(pingPayload);
 });
 
 // ==========================================
-// 4. REST API: Real-Time Port Scanner (POST /api/port-scan)
+// 4. REST API: Real-Time Port Scanner (POST /api/port-scan) (dengan Rate Limiter)
 // ==========================================
-app.post('/api/port-scan', async (req, res) => {
+app.post('/api/port-scan', portScanLimiter, async (req, res) => {
   const { host = '127.0.0.1', ports = [21, 22, 53, 80, 443, 3306, 8080, 8291] } = req.body;
   if (!host || !/^[a-zA-Z0-9][a-zA-Z0-9.-]*$/.test(host)) {
     return res.status(400).json({ error: 'Parameter host tidak valid.' });
